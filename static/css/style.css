@@ -39,3 +39,12 @@ width:90%;
 padding:10px;
 margin:10px;
 }
+.dashboard{
+margin-top:40px;
+}
+
+.dashboard button{
+display:block;
+margin:10px auto;
+width:200px;
+}
