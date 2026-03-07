@@ -1,0 +1,35 @@
+{% extends 'dashboards/student/base.html' %}
+
+{% block title %}Attendance{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>Complete Attendance History</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Course Code</th>
+                <th>Course Name</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for att in records %}
+            <tr>
+                <td>{{ att.date|date:"F d, Y" }}</td>
+                <td><strong>{{ att.course.code }}</strong></td>
+                <td>{{ att.course.name }}</td>
+                <td>
+                    <span class="status-badge {% if att.status == 'Present' %}status-present{% elif att.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
+                        {{ att.status }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No attendance records found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

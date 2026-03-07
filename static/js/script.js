@@ -1,3 +1,3 @@
 function goToLogin(){
-window.location.href = "/login-options/";
+window.location.href = "/auth/login-options/";
 }

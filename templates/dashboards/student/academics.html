@@ -1,0 +1,33 @@
+{% extends 'dashboards/student/base.html' %}
+
+{% block title %}Academics{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>Academic Records & Grades</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Course Code</th>
+                <th>Course Name</th>
+                <th>Semester</th>
+                <th>Grade</th>
+                <th>Marks</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td><strong>{{ record.course.code }}</strong></td>
+                <td>{{ record.course.name }}</td>
+                <td>{{ record.semester }}</td>
+                <td style="font-size: 18px;"><strong>{{ record.grade }}</strong></td>
+                <td>{{ record.marks|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No academic records available.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

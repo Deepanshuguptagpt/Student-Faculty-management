@@ -30,7 +30,7 @@ def login_view(request, role):
 
                 if user is not None:
                     login(request, user)
-                    return redirect("/dashboard/admin/")
+                    return redirect("/auth/dashboard/admin/")
                 else:
                     error = "Invalid admin credentials"
 
@@ -52,10 +52,11 @@ def login_view(request, role):
                 else:
 
                     if role == "student":
-                        return redirect("/dashboard/student/")
+                        request.session['student_email'] = email
+                        return redirect("/student/dashboard/")
 
                     elif role == "faculty":
-                        return redirect("/dashboard/faculty/")
+                        return redirect("/auth/dashboard/faculty/")
 
             except User.DoesNotExist:
                 error = "User not registered"

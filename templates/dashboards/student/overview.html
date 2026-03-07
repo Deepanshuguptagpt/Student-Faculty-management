@@ -1,0 +1,57 @@
+{% extends 'dashboards/student/base.html' %}
+
+{% block title %}Overview{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+    
+    <!-- Left Column: Profile -->
+    <div class="card profile-info">
+        <h3>My Profile</h3>
+        <p><strong>Name:</strong> {{ profile.user.name }}</p>
+        <p><strong>Enrollment No:</strong> {{ profile.enrollment_number }}</p>
+        <p><strong>Batch:</strong> {{ profile.batch_year }}</p>
+        <p><strong>Email:</strong> {{ profile.user.email }}</p>
+        <p><strong>Contact:</strong> {{ profile.contact_number|default:"N/A" }}</p>
+        <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+            <p><strong>Overall Attendance:</strong> 
+                <span style="color: #17a2b8; font-weight: bold; font-size: 18px;">{{ attendance_percentage }}%</span>
+            </p>
+        </div>
+    </div>
+    
+    <!-- Right Column: Quick Stats -->
+    <div class="card">
+        <h3>Snapshot</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center; border-left: 4px solid #dc3545;">
+                <h4 style="margin: 0; color: #666;">Fees Due</h4>
+                <p style="margin: 10px 0 0; font-size: 24px; font-weight: bold; color: #dc3545;">${{ total_due }}</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center; border-left: 4px solid #17a2b8;">
+                <h4 style="margin: 0; color: #666;">Enrolled Courses</h4>
+                <p style="margin: 10px 0 0; font-size: 24px; font-weight: bold; color: #17a2b8;">{{ enrollments|length }}</p>
+            </div>
+        </div>
+        
+        <h4>Recent Attendance</h4>
+        <table>
+            <tr><th>Date</th><th>Course</th><th>Status</th></tr>
+            {% for att in attendance_records %}
+            <tr>
+                <td>{{ att.date|date:"M d, Y" }}</td>
+                <td>{{ att.course.code }}</td>
+                <td>
+                    <span class="status-badge {% if att.status == 'Present' %}status-present{% elif att.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
+                        {{ att.status }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No recent logs.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}
