@@ -1,0 +1,33 @@
+{% extends "dashboards/faculty/base.html" %}
+
+{% block title %}Workload & Courses{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>My Workload</h3>
+    {% if workload_data %}
+    <table>
+        <thead>
+            <tr>
+                <th>Semester</th>
+                <th>Course</th>
+                <th>Credits</th>
+                <th>Enrolled Students</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in workload_data %}
+            <tr>
+                <td>{{ item.assignment.semester }}</td>
+                <td>{{ item.assignment.course.code }} - {{ item.assignment.course.name }}</td>
+                <td>{{ item.credits }}</td>
+                <td>{{ item.student_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No workload data available.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'authentication',
     'backend.student',
     'backend.administration',
+    'backend.faculty',
 ]
 
 MIDDLEWARE = [

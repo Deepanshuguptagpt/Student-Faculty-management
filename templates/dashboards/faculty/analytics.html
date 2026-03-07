@@ -1,0 +1,66 @@
+{% extends "dashboards/faculty/base.html" %}
+
+{% block title %}Students Analytics{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>Analytics by Course</h3>
+    {% if analytics_data %}
+    {% for data in analytics_data %}
+    <div style="margin-bottom: 30px; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+        <h4 style="margin-top: 0; color: #2c3e50;">{{ data.course.code }} - {{ data.course.name }}</h4>
+        <p>Total Classes Held: <strong>{{ data.total_classes }}</strong></p>
+
+        {% if data.student_stats %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Attendance Percentage</th>
+                    <th>Status Warning</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in data.student_stats %}
+                <tr>
+                    <td>{{ stat.student.user.name }} ({{ stat.student.enrollment_number }})</td>
+                    <td>
+                        <div
+                            style="background-color: #eee; border-radius: 10px; height: 10px; width: 100%; margin-bottom: 5px;">
+                            {% if stat.attendance_percent >= 75 %}
+                            <div
+                                style="background-color: #2ecc71; height: 100%; border-radius: 10px; width: {{ stat.attendance_percent }}%;">
+                            </div>
+                            {% elif stat.attendance_percent >= 60 %}
+                            <div
+                                style="background-color: #f39c12; height: 100%; border-radius: 10px; width: {{ stat.attendance_percent }}%;">
+                            </div>
+                            {% else %}
+                            <div
+                                style="background-color: #e74c3c; height: 100%; border-radius: 10px; width: {{ stat.attendance_percent }}%;">
+                            </div>
+                            {% endif %}
+                        </div>
+                        <span>{{ stat.attendance_percent|floatformat:1 }}%</span>
+                    </td>
+                    <td>
+                        {% if stat.attendance_percent < 75 %} <span class="status-badge"
+                            style="background-color: #f8d7da; color: #721c24;">Low Attendance</span>
+                            {% else %}
+                            <span class="status-badge" style="background-color: #d4edda; color: #155724;">Good</span>
+                            {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No student data available.</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>No analytics data available across courses.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "dashboards/faculty/base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>Faculty Profile</h3>
+    {% if profile %}
+    <div style="display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: start;">
+        <div
+            style="width: 150px; height: 150px; background-color: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px; color: #999;">
+            {{ profile.user.name|make_list|first }}
+        </div>
+        <div>
+            <h2 style="margin-top: 0; margin-bottom: 5px;">{{ profile.user.name }}</h2>
+            <p style="color: #666; margin-top: 0;">{{ profile.designation }}</p>
+
+            <table style="width: 100%; max-width: 500px; margin-top: 20px;">
+                <tr>
+                    <th style="background: none; padding: 8px 0; color: #666; width: 140px;">Email:</th>
+                    <td style="padding: 8px 0; border: none;">{{ profile.user.email }}</td>
+                </tr>
+                <tr>
+                    <th style="background: none; padding: 8px 0; color: #666;">Department:</th>
+                    <td style="padding: 8px 0; border: none;">{{ profile.department.name }} ({{ profile.department.code
+                        }})</td>
+                </tr>
+                <tr>
+                    <th style="background: none; padding: 8px 0; color: #666;">Contact Number:</th>
+                    <td style="padding: 8px 0; border: none;">{{ profile.contact_number|default:"Not Provided" }}</td>
+                </tr>
+                <tr>
+                    <th style="background: none; padding: 8px 0; color: #666;">Address:</th>
+                    <td style="padding: 8px 0; border: none;">{{ profile.address|default:"Not Provided" }}</td>
+                </tr>
+                <tr>
+                    <th style="background: none; padding: 8px 0; color: #666;">Date Joined:</th>
+                    <td style="padding: 8px 0; border: none;">{{ profile.date_joined|date:"M d, Y" }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <p>Profile details not available.</p>
+    {% endif %}
+</div>
+{% endblock %}

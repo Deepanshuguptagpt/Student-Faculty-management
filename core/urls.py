@@ -24,4 +24,5 @@ urlpatterns = [
     path('auth/', include('authentication.urls')),
     path('student/', include('backend.student.urls')),
     path('admin-panel/', include('backend.administration.urls')),
+    path('faculty/', include('backend.faculty.urls')),
 ]
