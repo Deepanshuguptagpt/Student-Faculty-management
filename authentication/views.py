@@ -30,7 +30,7 @@ def login_view(request, role):
 
                 if user is not None:
                     login(request, user)
-                    return redirect("/auth/dashboard/admin/")
+                    return redirect("/admin-panel/dashboard/")
                 else:
                     error = "Invalid admin credentials"
 

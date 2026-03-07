@@ -7,6 +7,7 @@ django.setup()
 
 from authentication.models import User
 from backend.student.models import StudentProfile, Course, Enrollment, Attendance, FeeRecord, AcademicRecord
+from backend.administration.models import FacultyProfile
 
 def seed_data():
     print("Seeding test data...")
@@ -22,6 +23,17 @@ def seed_data():
     )
     if created:
         print("Created test user: student@test.com")
+
+    admin, created = User.objects.get_or_create(
+        email='admin@example.com',
+        defaults={
+            'name': 'System Admin', 
+            'role': 'admin', 
+            'password': 'ADMIN'
+        }
+    )
+    if created:
+        print("Created admin user: admin@example.com")
 
     # 2. Create Student Profile
     profile, created = StudentProfile.objects.get_or_create(
@@ -59,6 +71,13 @@ def seed_data():
     # 7. Add Academic Records
     AcademicRecord.objects.get_or_create(student=profile, course=cs101, semester='Fall 2026', defaults={'grade': 'B+', 'marks': 87.5})
     AcademicRecord.objects.get_or_create(student=profile, course=mt201, semester='Fall 2026', defaults={'grade': 'A', 'marks': 92.0})
+
+    # 8. Add Faculty
+    prof1, _ = User.objects.get_or_create(email='prof.smith@univ.edu', defaults={'name': 'Dr. Robert Smith', 'role': 'faculty', 'password': 'password123'})
+    prof2, _ = User.objects.get_or_create(email='prof.doe@univ.edu', defaults={'name': 'Prof. Jane Doe', 'role': 'faculty', 'password': 'password123'})
+
+    FacultyProfile.objects.get_or_create(user=prof1, defaults={'employee_id': 'FAC001', 'department': 'Computer Science', 'designation': 'Professor', 'contact_number': '+0987654321'})
+    FacultyProfile.objects.get_or_create(user=prof2, defaults={'employee_id': 'FAC002', 'department': 'Physics', 'designation': 'Assistant Professor', 'contact_number': '+1122334455'})
 
     print("Data seeding complete.")
 

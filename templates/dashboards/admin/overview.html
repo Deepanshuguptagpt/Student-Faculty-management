@@ -1,0 +1,36 @@
+{% extends 'dashboards/admin/base.html' %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+
+<h2>Admin Overview Analytics</h2>
+
+<div class="stats-grid">
+    <div class="stat-card" style="border-top-color: #3498db;">
+        <h4>Total Students</h4>
+        <p>{{ total_students }}</p>
+    </div>
+    <div class="stat-card" style="border-top-color: #2ecc71;">
+        <h4>Total Faculty</h4>
+        <p>{{ total_faculty }}</p>
+    </div>
+    <div class="stat-card" style="border-top-color: #f1c40f;">
+        <h4>Total Revenue Collected</h4>
+        <p>${{ total_collected }}</p>
+    </div>
+    <div class="stat-card" style="border-top-color: #e74c3c;">
+        <h4>Pending Student Dues</h4>
+        <p>${{ total_pending }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Quick Actions</h3>
+    <div style="display: flex; gap: 15px; margin-top: 15px;">
+        <a href="/admin-panel/students/" style="padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 4px;">View All Students</a>
+        <a href="/admin-panel/faculty/" style="padding: 10px 20px; background: #2ecc71; color: white; text-decoration: none; border-radius: 4px;">View All Faculty</a>
+    </div>
+</div>
+
+{% endblock %}

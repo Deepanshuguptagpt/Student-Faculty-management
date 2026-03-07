@@ -1,0 +1,37 @@
+{% extends 'dashboards/admin/base.html' %}
+
+{% block title %}Manage Students{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Registered Students</h3>
+        <button style="padding: 8px 15px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer;">+ Add Student</button>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Enrollment No</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Batch Year</th>
+                <th>Contact</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td><strong>{{ student.enrollment_number }}</strong></td>
+                <td>{{ student.user.name }}</td>
+                <td>{{ student.user.email }}</td>
+                <td>{{ student.batch_year }}</td>
+                <td>{{ student.contact_number }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No students registered in the system yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

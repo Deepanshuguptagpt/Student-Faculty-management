@@ -1,0 +1,38 @@
+{% extends 'dashboards/admin/base.html' %}
+
+{% block title %}Manage Faculty{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Registered Faculty</h3>
+        <button style="padding: 8px 15px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer;">+ Add Faculty</button>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Designation</th>
+                <th>Contact</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for staff in faculty %}
+            <tr>
+                <td><strong>{{ staff.employee_id }}</strong></td>
+                <td>{{ staff.user.name }}</td>
+                <td>{{ staff.department }}</td>
+                <td>{{ staff.designation }}</td>
+                <td>{{ staff.contact_number|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No faculty members registered yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
