@@ -1,4 +1,8 @@
 from django.shortcuts import render, redirect
+from django.urls import reverse
+from .models import User
+from django.contrib.auth.models import User as DjangoUser
+from django.contrib.auth import authenticate, login
 
 def landing(request):
     return render(request,'authentication/landing.html')
@@ -10,23 +14,53 @@ def login_options(request):
 
 def login_view(request, role):
 
+    error = None
+
     if request.method == "POST":
 
         email = request.POST.get("email")
         password = request.POST.get("password")
 
-        if password == "ADMIN":
+        # ADMIN LOGIN (Django superuser)
+        if role == "admin":
+            try:
+                admin_user = DjangoUser.objects.get(email=email)
 
-            if role == "student":
-                return redirect("/dashboard/student/")
+                user = authenticate(username=admin_user.username, password=password)
 
-            elif role == "faculty":
-                return redirect("/dashboard/faculty/")
+                if user is not None:
+                    login(request, user)
+                    return redirect("/dashboard/admin/")
+                else:
+                    error = "Invalid admin credentials"
 
-            elif role == "admin":
-                return redirect("/dashboard/admin/")
+            except DjangoUser.DoesNotExist:
+                error = "Admin not found"
 
-    return render(request,'authentication/login.html',{"role":role})
+
+        # STUDENT / FACULTY LOGIN
+        else:
+            try:
+                user = User.objects.get(email=email)
+
+                if user.password != password:
+                    error = "Invalid password"
+
+                elif user.role != role:
+                    error = "Access denied for this role"
+
+                else:
+
+                    if role == "student":
+                        return redirect("/dashboard/student/")
+
+                    elif role == "faculty":
+                        return redirect("/dashboard/faculty/")
+
+            except User.DoesNotExist:
+                error = "User not registered"
+
+    return render(request,'authentication/login.html',{"role":role,"error":error})
 
 def student_dashboard(request):
     return render(request,'dashboards/student_dashboard.html')
