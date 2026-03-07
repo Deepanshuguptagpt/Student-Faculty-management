@@ -11,7 +11,7 @@ class Department(models.Model):
         return self.name
 
 class FacultyProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='faculty_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='faculty_module_profile')
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, related_name='faculties')
     designation = models.CharField(max_length=100, default="Assistant Professor")
     contact_number = models.CharField(max_length=20, null=True, blank=True)

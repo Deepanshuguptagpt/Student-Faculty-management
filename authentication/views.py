@@ -56,7 +56,8 @@ def login_view(request, role):
                         return redirect("/student/dashboard/")
 
                     elif role == "faculty":
-                        return redirect("/auth/dashboard/faculty/")
+                        request.session['faculty_email'] = email
+                        return redirect("/faculty/dashboard/")
 
             except User.DoesNotExist:
                 error = "User not registered"
