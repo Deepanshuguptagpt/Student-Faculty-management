@@ -1,6 +1,17 @@
 from django.db import models
 from authentication.models import User
 
+SEMESTER_CHOICES = [
+    ('1st Semester', '1st Semester'),
+    ('2nd Semester', '2nd Semester'),
+    ('3rd Semester', '3rd Semester'),
+    ('4th Semester', '4th Semester'),
+    ('5th Semester', '5th Semester'),
+    ('6th Semester', '6th Semester'),
+    ('7th Semester', '7th Semester'),
+    ('8th Semester', '8th Semester'),
+]
+
 class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
     enrollment_number = models.CharField(max_length=50, unique=True)
@@ -8,6 +19,27 @@ class StudentProfile(models.Model):
     contact_number = models.CharField(max_length=20, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
+
+    @property
+    def current_semester(self):
+        from datetime import date
+        today = date.today()
+        # Assume academic year starts in July/August.
+        years_diff = today.year - self.batch_year
+        if today.month >= 7:
+            sem = years_diff * 2 + 1
+        else:
+            sem = years_diff * 2
+        
+        sem = max(1, sem)
+        if sem == 1:
+            return "1st Semester"
+        elif sem == 2:
+            return "2nd Semester"
+        elif sem == 3:
+            return "3rd Semester"
+        else:
+            return f"{sem}th Semester"
 
     def __str__(self):
         return f"{self.user.name} ({self.enrollment_number})"
@@ -24,7 +56,7 @@ class Course(models.Model):
 class Enrollment(models.Model):
     student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='enrollments')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
-    semester = models.CharField(max_length=50) # e.g., 'Fall 2026'
+    semester = models.CharField(max_length=50, choices=SEMESTER_CHOICES)
     date_enrolled = models.DateField(auto_now_add=True)
 
     def __str__(self):
@@ -39,10 +71,14 @@ class Attendance(models.Model):
     student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='attendance_records')
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     date = models.DateField()
+    lecture_number = models.IntegerField(choices=[(i, str(i)) for i in range(1, 8)], default=1)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Present')
 
+    class Meta:
+        unique_together = ('student', 'course', 'date', 'lecture_number')
+
     def __str__(self):
-        return f"{self.student.user.name} - {self.course.code} - {self.date}: {self.status}"
+        return f"{self.student.user.name} - {self.course.code} - {self.date} (L{self.lecture_number}): {self.status}"
 
 class FeeRecord(models.Model):
     STATUS_CHOICES = [
@@ -51,7 +87,7 @@ class FeeRecord(models.Model):
         ('Overdue', 'Overdue'),
     ]
     student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='fee_records')
-    semester = models.CharField(max_length=50)
+    semester = models.CharField(max_length=50, choices=SEMESTER_CHOICES)
     amount_due = models.DecimalField(max_digits=10, decimal_places=2)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     due_date = models.DateField()
@@ -63,7 +99,7 @@ class FeeRecord(models.Model):
 class AcademicRecord(models.Model):
     student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='academic_records')
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    semester = models.CharField(max_length=50)
+    semester = models.CharField(max_length=50, choices=SEMESTER_CHOICES)
     grade = models.CharField(max_length=5)
     marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 

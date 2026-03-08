@@ -1,6 +1,6 @@
 from django.db import models
 from authentication.models import User
-from backend.student.models import Course
+from backend.student.models import Course, SEMESTER_CHOICES
 
 class Department(models.Model):
     name = models.CharField(max_length=150, unique=True)
@@ -34,7 +34,7 @@ class FacultyProfile(models.Model):
 class FacultyCourseAssignment(models.Model):
     faculty = models.ForeignKey(FacultyProfile, on_delete=models.CASCADE, related_name='course_assignments')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='assigned_faculties')
-    semester = models.CharField(max_length=50) # e.g., 'Fall 2026'
+    semester = models.CharField(max_length=50, choices=SEMESTER_CHOICES)
 
     class Meta:
         unique_together = ('faculty', 'course', 'semester')

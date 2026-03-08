@@ -9,15 +9,43 @@
         <div style="margin-bottom: 15px;">
             <label for="course_id" style="display: block; margin-bottom: 5px;">Course:</label>
             <select name="course_id" id="course_id"
-                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;" required>
                 <option value="">-- Select Course --</option>
-                {% for a in assignments %}
-                <option value="{{ a.course.id }}" {% if selected_course_id == a.course.id %}selected{% endif %}>
-                    {{ a.course.code }} - {{ a.course.name }}
+                <optgroup label="My Assigned Courses">
+                    {% for c in my_courses %}
+                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+                        {{ c.code }} - {{ c.name }}
+                    </option>
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Other Courses (Extra/Swapped)">
+                    {% for c in other_courses %}
+                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+                        {{ c.code }} - {{ c.name }}
+                    </option>
+                    {% endfor %}
+                </optgroup>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="date_filter" style="display: block; margin-bottom: 5px;">Date:</label>
+            <input type="date" name="date" id="date_filter" value="{{ selected_date|default:'' }}" required
+                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="lecture_number_filter" style="display: block; margin-bottom: 5px;">Lecture Number:</label>
+            <select name="lecture_number" id="lecture_number_filter" required
+                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="">-- Select Lecture --</option>
+                {% for i in "1234567"|make_list %}
+                <option value="{{ i }}" {% if selected_lecture|stringformat:"s" == i %}selected{% endif %}>Lecture {{ i }}
                 </option>
                 {% endfor %}
             </select>
         </div>
+
         <button type="submit"
             style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Load
             Students</button>
@@ -34,14 +62,14 @@
     <form method="POST" action="">
         {% csrf_token %}
         <input type="hidden" name="course_id" value="{{ selected_course_id }}">
+        <input type="hidden" name="date" value="{{ selected_date }}">
+        <input type="hidden" name="lecture_number" value="{{ selected_lecture }}">
 
-        <div style="margin-bottom: 20px;">
-            <label for="date" style="display: block; margin-bottom: 5px; font-weight: bold;">Date:</label>
-            <input type="date" name="date" id="date" required
-                style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-        </div>
+        <p style="margin-bottom: 20px; font-weight: bold;">
+            Marking attendance for Date: {{ selected_date }}, Lecture: {{ selected_lecture }}
+        </p>
 
-        {% if students %}
+        {% if students_data %}
         <table>
             <thead>
                 <tr>
@@ -51,16 +79,16 @@
                 </tr>
             </thead>
             <tbody>
-                {% for student in students %}
+                {% for item in students_data %}
                 <tr>
-                    <td>{{ student.user.name }}</td>
-                    <td>{{ student.enrollment_number }}</td>
+                    <td>{{ item.student.user.name }}</td>
+                    <td>{{ item.student.enrollment_number }}</td>
                     <td>
-                        <input type="hidden" name="student_ids" value="{{ student.id }}">
+                        <input type="hidden" name="student_ids" value="{{ item.student.id }}">
                         <select name="statuses" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
-                            <option value="Present">Present</option>
-                            <option value="Absent">Absent</option>
-                            <option value="Late">Late</option>
+                            <option value="Present" {% if item.status == 'Present' %}selected{% endif %}>Present</option>
+                            <option value="Absent" {% if item.status == 'Absent' %}selected{% endif %}>Absent</option>
+                            <option value="Late" {% if item.status == 'Late' %}selected{% endif %}>Late</option>
                         </select>
                     </td>
                 </tr>

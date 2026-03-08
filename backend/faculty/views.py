@@ -57,38 +57,60 @@ def faculty_courses(request):
 
 def faculty_attendance(request):
     profile = get_faculty_profile(request)
-    assignments = FacultyCourseAssignment.objects.filter(faculty=profile)
+    my_assignments = FacultyCourseAssignment.objects.filter(faculty=profile)
+    my_course_ids = my_assignments.values_list('course_id', flat=True)
+    all_courses = Course.objects.all()
     
     if request.method == "POST":
         course_id = request.POST.get("course_id")
         date = request.POST.get("date")
+        lecture_number = request.POST.get("lecture_number")
         student_ids = request.POST.getlist("student_ids")
         statuses = request.POST.getlist("statuses")
         
         # For simplicity, if taking attendance
-        if course_id and date and student_ids:
+        if course_id and date and lecture_number and student_ids:
             course = Course.objects.get(id=course_id)
             for student_id, status in zip(student_ids, statuses):
                 student = StudentProfile.objects.get(id=student_id)
                 Attendance.objects.update_or_create(
-                    student=student, course=course, date=date,
+                    student=student, course=course, date=date, lecture_number=lecture_number,
                     defaults={"status": status}
                 )
             
-            return redirect('/faculty/dashboard/attendance/?success=1')
+            return redirect(f'/faculty/dashboard/attendance/?success=1&course_id={course_id}&date={date}&lecture_number={lecture_number}')
     
     # If selected a course to view/take attendance
     selected_course_id = request.GET.get('course_id')
-    students = []
+    selected_date = request.GET.get('date')
+    selected_lecture = request.GET.get('lecture_number')
+
+    students_data = []
     if selected_course_id:
         enrollments = Enrollment.objects.filter(course_id=selected_course_id)
         students = [en.student for en in enrollments]
         
+        for student in students:
+            status = "Present"
+            if selected_date and selected_lecture:
+                existing = Attendance.objects.filter(
+                    student=student, course_id=selected_course_id, date=selected_date, lecture_number=selected_lecture
+                ).first()
+                if existing:
+                    status = existing.status
+            students_data.append({
+                'student': student,
+                'status': status
+            })
+        
     context = {
         'profile': profile,
-        'assignments': assignments,
-        'students': students,
-        'selected_course_id': int(selected_course_id) if selected_course_id else None
+        'my_courses': Course.objects.filter(id__in=my_course_ids),
+        'other_courses': Course.objects.exclude(id__in=my_course_ids),
+        'students_data': students_data,
+        'selected_course_id': int(selected_course_id) if selected_course_id else None,
+        'selected_date': selected_date,
+        'selected_lecture': int(selected_lecture) if selected_lecture else None
     }
     return render(request, "dashboards/faculty/attendance.html", context)
 
@@ -100,7 +122,7 @@ def faculty_analytics(request):
     analytics_data = []
     for assignment in assignments:
         course = assignment.course
-        total_classes = Attendance.objects.filter(course=course).values('date').distinct().count()
+        total_classes = Attendance.objects.filter(course=course).values('date', 'lecture_number').distinct().count()
         enrollments = Enrollment.objects.filter(course=course)
         
         student_stats = []
