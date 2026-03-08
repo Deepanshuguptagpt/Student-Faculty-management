@@ -11,11 +11,28 @@ SEMESTER_CHOICES = [
     ('7th Semester', '7th Semester'),
     ('8th Semester', '8th Semester'),
 ]
+BRANCH_CHOICES = [
+    ('Computer science engineering', 'Computer science engineering'),
+    ('Artificial Intelligence and machine Learning', 'Artificial Intelligence and machine Learning'),
+    ('electronics and communication', 'electronics and communication'),
+    ('Data science', 'Data science'),
+    ('Information technology', 'Information technology'),
+    ('mechanical engineering', 'mechanical engineering'),
+    ('Civil engineering', 'Civil engineering'),
+    ('Robotics and Artificial Intelligence', 'Robotics and Artificial Intelligence'),
+    ('Internet of things', 'Internet of things')
+]
+
+COURSE_CHOICES = [
+    ('B.tech', 'B.tech')
+]
 
 class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
     enrollment_number = models.CharField(max_length=50, unique=True)
     batch_year = models.IntegerField()
+    branch = models.CharField(max_length=100, choices=BRANCH_CHOICES, default='Computer science engineering')
+    course_name = models.CharField(max_length=50, choices=COURSE_CHOICES, default='B.tech')
     contact_number = models.CharField(max_length=20, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)

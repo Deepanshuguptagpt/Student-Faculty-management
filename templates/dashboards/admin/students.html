@@ -4,17 +4,62 @@
 
 {% block content %}
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h3>Registered Students</h3>
-        <button style="padding: 8px 15px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer;">+ Add Student</button>
+        <button
+            style="padding: 8px 15px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer;">+
+            Add Student</button>
     </div>
-    
+
+    <!-- Filter Form -->
+    <form method="GET" action=""
+        style="display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+            <label for="branch_filter"
+                style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Branch:</label>
+            <select name="branch" id="branch_filter"
+                style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <option value="">-- All Branches --</option>
+                {% for b in branches %}
+                <option value="{{ b }}" {% if selected_branch == b %}selected{% endif %}>{{ b }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
+            <label for="year_filter" style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Batch
+                Year:</label>
+            <input type="number" name="year" id="year_filter" value="{{ selected_year|default:'' }}"
+                placeholder="e.g. 2026" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
+            <label for="course_filter"
+                style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Course:</label>
+            <select name="course" id="course_filter"
+                style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <option value="">-- All Courses --</option>
+                {% for c in courses %}
+                <option value="{{ c }}" {% if selected_course == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <button type="submit"
+                style="padding: 8px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Apply
+                Filters</button>
+            <a href="?"
+                style="padding: 8px 20px; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px; margin-left: 10px; display: inline-block;">Clear</a>
+        </div>
+    </form>
     <table>
         <thead>
             <tr>
                 <th>Enrollment No</th>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Branch</th>
                 <th>Batch Year</th>
                 <th>Contact</th>
             </tr>
@@ -25,11 +70,14 @@
                 <td><strong>{{ student.enrollment_number }}</strong></td>
                 <td>{{ student.user.name }}</td>
                 <td>{{ student.user.email }}</td>
+                <td>{{ student.branch }}</td>
                 <td>{{ student.batch_year }}</td>
                 <td>{{ student.contact_number }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="5">No students registered in the system yet.</td></tr>
+            <tr>
+                <td colspan="6">No students registered in the system yet.</td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
