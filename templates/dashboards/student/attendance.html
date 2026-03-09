@@ -4,7 +4,20 @@
 
 {% block content %}
 <div class="card">
-    <h3>Complete Attendance History</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0; border: none; padding: 0;">Complete Attendance History</h3>
+        <form method="GET" style="display: flex; gap: 10px;">
+            <select name="course_id" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="">-- All Courses --</option>
+                {% for c in courses %}
+                <option value="{{ c.id }}" {% if selected_course_id == c.id  %}selected{% endif %}>{{ c.code }} - {{ c.name
+                    }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit"
+                style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Filter</button>
+        </form>
+    </div>
     <table>
         <thead>
             <tr>
@@ -21,13 +34,16 @@
                 <td><strong>{{ att.course.code }}</strong></td>
                 <td>{{ att.course.name }}</td>
                 <td>
-                    <span class="status-badge {% if att.status == 'Present' %}status-present{% elif att.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
+                    <span
+                        class="status-badge {% if att.status  ==  'Present'  %}status-present{% elif att.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
                         {{ att.status }}
                     </span>
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="4">No attendance records found.</td></tr>
+            <tr>
+                <td colspan="4">No attendance records found.</td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>

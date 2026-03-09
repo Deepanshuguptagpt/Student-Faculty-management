@@ -1,0 +1,82 @@
+{% extends "dashboards/faculty/base.html" %}
+
+{% block title %}Manage Assignments{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>Create New Assignment</h3>
+    <form method="POST" action="">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px;">Assignment Title</label>
+                <input type="text" name="title" required
+                    style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 5px;">Due Date</label>
+                <input type="date" name="due_date"
+                    style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 5px;">Course (Your Specializations)</label>
+                <select name="course_id" required
+                    style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="">-- Select Course --</option>
+                    {% for c in courses %}
+                    <option value="{{ c.id }}">{{ c.code }} - {{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 5px;">Branch</label>
+                <select name="branch" required
+                    style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="">-- Select Branch --</option>
+                    {% for b in branches %}
+                    <option value="{{ b }}">{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="grid-column: span 2;">
+                <label style="display: block; margin-bottom: 5px;">Description Context / Instructions</label>
+                <textarea name="description" rows="4"
+                    style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"></textarea>
+            </div>
+        </div>
+        <button type="submit"
+            style="margin-top: 15px; background: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Post
+            Assignment</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Previously Given Assignments</h3>
+    {% if assignments %}
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Course</th>
+                <th>Branch</th>
+                <th>Due Date</th>
+                <th>Posted On</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in assignments %}
+            <tr>
+                <td><strong>{{ a.title }}</strong></td>
+                <td>{{ a.course.code }}</td>
+                <td>{{ a.branch }}</td>
+                <td>{{ a.due_date|default:"No due date" }}</td>
+                <td>{{ a.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>You haven't posted any assignments yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

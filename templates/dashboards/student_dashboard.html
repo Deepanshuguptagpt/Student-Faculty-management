@@ -85,7 +85,7 @@
                         <td>{{ fee.semester }}</td>
                         <td>${{ fee.amount_due }}</td>
                         <td>
-                            <span class="status-badge {% if fee.status == 'Paid' %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
+                            <span class="status-badge {% if fee.status  ==  'Paid'  %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
                                 {{ fee.status }}
                             </span>
                         </td>
@@ -181,7 +181,7 @@
                             <td>{{ att.date|date:"M d, Y" }}</td>
                             <td>{{ att.course.code }}</td>
                             <td>
-                                <span class="status-badge {% if att.status == 'Present' %}status-present{% elif att.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
+                                <span class="status-badge {% if att.status  ==  'Present'  %}status-present{% elif att.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
                                     {{ att.status }}
                                 </span>
                             </td>

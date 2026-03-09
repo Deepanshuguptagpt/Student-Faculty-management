@@ -52,7 +52,7 @@
             <h2>Admin Control Panel</h2>
         </div>
         <div class="nav-links">
-            <a href="/admin-panel/dashboard/" class="nav-item {% if request.path == '/admin-panel/dashboard/' %}active{% endif %}">Dashboard</a>
+            <a href="/admin-panel/dashboard/" class="nav-item {% if request.path  ==  '/admin-panel/dashboard/'  %}active{% endif %}">Dashboard</a>
             <a href="/admin-panel/students/" class="nav-item {% if '/students/' in request.path %}active{% endif %}">Manage Students</a>
             <a href="/admin-panel/faculty/" class="nav-item {% if '/faculty/' in request.path %}active{% endif %}">Manage Faculty</a>
             <a href="/admin-panel/fees/" class="nav-item {% if '/fees/' in request.path %}active{% endif %}">Fee Management</a>

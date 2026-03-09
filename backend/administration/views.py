@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from authentication.models import User
 from backend.student.models import StudentProfile, FeeRecord, BRANCH_CHOICES, COURSE_CHOICES, SEMESTER_CHOICES
-from .models import FacultyProfile
+from backend.faculty.models import FacultyProfile
 
 def admin_dashboard(request):
     total_students = StudentProfile.objects.count()
@@ -46,7 +46,7 @@ def manage_students(request):
 
 
 def manage_faculty(request):
-    faculty = FacultyProfile.objects.all().select_related('user')
+    faculty = FacultyProfile.objects.all().select_related('user', 'department').order_by('department__name')
     return render(request, "dashboards/admin/faculty.html", {'faculty': faculty})
 
 
@@ -75,3 +75,98 @@ def fee_management(request):
         'courses': [c[0] for c in COURSE_CHOICES],
         'semesters': [s[0] for s in SEMESTER_CHOICES]
     })
+
+def add_student(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        name = request.POST.get('name')
+        if not User.objects.filter(email=email).exists():
+            user = User.objects.create(email=email, name=name, role='student', password='ADMIN')
+            StudentProfile.objects.create(
+                user=user,
+                enrollment_number=request.POST.get('enrollment_number'),
+                branch=request.POST.get('branch'),
+                course_name=request.POST.get('course_name'),
+                batch_year=request.POST.get('batch_year'),
+                contact_number=request.POST.get('contact_number')
+            )
+        return redirect('manage_students')
+    return render(request, 'dashboards/admin/student_form.html', {
+        'action': 'Add',
+        'branches': [b[0] for b in BRANCH_CHOICES],
+        'courses': [c[0] for c in COURSE_CHOICES]
+    })
+
+def edit_student(request, student_id):
+    student = StudentProfile.objects.get(id=student_id)
+    if request.method == 'POST':
+        student.user.name = request.POST.get('name')
+        student.user.email = request.POST.get('email')
+        student.user.save()
+        
+        student.enrollment_number = request.POST.get('enrollment_number')
+        student.branch = request.POST.get('branch')
+        student.course_name = request.POST.get('course_name')
+        student.batch_year = request.POST.get('batch_year')
+        student.contact_number = request.POST.get('contact_number')
+        student.save()
+        return redirect('manage_students')
+        
+    return render(request, 'dashboards/admin/student_form.html', {
+        'action': 'Edit',
+        'student': student,
+        'user_obj': student.user,
+        'branches': [b[0] for b in BRANCH_CHOICES],
+        'courses': [c[0] for c in COURSE_CHOICES]
+    })
+
+def delete_student(request, student_id):
+    student = StudentProfile.objects.get(id=student_id)
+    student.user.delete() # Automatically cascades to StudentProfile
+    return redirect('manage_students')
+
+def add_faculty(request):
+    from backend.faculty.models import Department
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        name = request.POST.get('name')
+        if not User.objects.filter(email=email).exists():
+            user = User.objects.create(email=email, name=name, role='faculty', password='ADMIN')
+            dept = Department.objects.get(id=request.POST.get('department_id'))
+            FacultyProfile.objects.create(
+                user=user,
+                department=dept,
+                designation=request.POST.get('designation'),
+                contact_number=request.POST.get('contact_number')
+            )
+        return redirect('manage_faculty')
+    return render(request, 'dashboards/admin/faculty_form.html', {
+        'action': 'Add',
+        'departments': Department.objects.all()
+    })
+
+def edit_faculty(request, faculty_id):
+    from backend.faculty.models import Department
+    faculty = FacultyProfile.objects.get(id=faculty_id)
+    if request.method == 'POST':
+        faculty.user.name = request.POST.get('name')
+        faculty.user.email = request.POST.get('email')
+        faculty.user.save()
+        
+        faculty.department = Department.objects.get(id=request.POST.get('department_id'))
+        faculty.designation = request.POST.get('designation')
+        faculty.contact_number = request.POST.get('contact_number')
+        faculty.save()
+        return redirect('manage_faculty')
+        
+    return render(request, 'dashboards/admin/faculty_form.html', {
+        'action': 'Edit',
+        'faculty': faculty,
+        'user_obj': faculty.user,
+        'departments': Department.objects.all()
+    })
+
+def delete_faculty(request, faculty_id):
+    faculty = FacultyProfile.objects.get(id=faculty_id)
+    faculty.user.delete() # Automatically cascades
+    return redirect('manage_faculty')

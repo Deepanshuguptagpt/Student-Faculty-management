@@ -32,7 +32,7 @@
                 <td>${{ fee.amount_paid }}</td>
                 <td>{{ fee.due_date|date:"F d, Y" }}</td>
                 <td>
-                    <span class="status-badge {% if fee.status == 'Paid' %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
+                    <span class="status-badge {% if fee.status  ==  'Paid'  %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
                         {{ fee.status }}
                     </span>
                 </td>

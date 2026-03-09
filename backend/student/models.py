@@ -58,6 +58,12 @@ class StudentProfile(models.Model):
         else:
             return f"{sem}th Semester"
 
+    @property
+    def current_year(self):
+        sem = int(''.join(filter(str.isdigit, self.current_semester)))
+        year = (sem + 1) // 2
+        return f"{year}rd Year" if year == 3 else f"{year}th Year" if year > 3 else f"{year}nd Year" if year == 2 else "1st Year"
+
     def __str__(self):
         return f"{self.user.name} ({self.enrollment_number})"
 

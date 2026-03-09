@@ -43,7 +43,7 @@
                 <td>{{ att.date|date:"M d, Y" }}</td>
                 <td>{{ att.course.code }}</td>
                 <td>
-                    <span class="status-badge {% if att.status == 'Present' %}status-present{% elif att.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
+                    <span class="status-badge {% if att.status  ==  'Present'  %}status-present{% elif att.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
                         {{ att.status }}
                     </span>
                 </td>

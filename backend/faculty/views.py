@@ -146,3 +146,37 @@ def faculty_analytics(request):
         'analytics_data': analytics_data
     }
     return render(request, "dashboards/faculty/analytics.html", context)
+
+def faculty_assignments(request):
+    profile = get_faculty_profile(request)
+    my_assigned_courses = FacultyCourseAssignment.objects.filter(faculty=profile).values_list('course_id', flat=True)
+    from backend.student.models import BRANCH_CHOICES, Course
+    courses = Course.objects.filter(id__in=my_assigned_courses)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        course_id = request.POST.get('course_id')
+        branch = request.POST.get('branch')
+        due_date = request.POST.get('due_date')
+        if title and course_id and branch:
+            from .models import Assignment
+            Assignment.objects.create(
+                faculty=profile,
+                title=title,
+                description=description,
+                course_id=course_id,
+                branch=branch,
+                due_date=due_date if due_date else None
+            )
+        return redirect('faculty_assignments')
+        
+    from .models import Assignment
+    assignments = Assignment.objects.filter(faculty=profile).order_by('-created_at')
+    
+    return render(request, "dashboards/faculty/assignments.html", {
+        'profile': profile,
+        'courses': courses,
+        'branches': [b[0] for b in BRANCH_CHOICES],
+        'assignments': assignments
+    })

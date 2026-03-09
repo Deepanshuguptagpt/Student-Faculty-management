@@ -1,0 +1,53 @@
+{% extends 'dashboards/admin/base.html' %}
+
+{% block title %}{{ action }} Faculty{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>{{ action }} Faculty</h3>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <label>Name</label>
+                <input type="text" name="name" value="{{ user_obj.name|default:'' }}" required
+                    style="width: 100%; padding: 8px;">
+            </div>
+            <div>
+                <label>Email</label>
+                <input type="email" name="email" value="{{ user_obj.email|default:'' }}" required
+                    style="width: 100%; padding: 8px;">
+            </div>
+            <div>
+                <label>Department</label>
+                <select name="department_id" required style="width: 100%; padding: 8px;">
+                    <option value="">-- Select Department --</option>
+                    {% for d in departments %}
+                    <option value="{{ d.id }}" {% if faculty.department_id == d.id  %}selected{% endif %}>{{ d.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Designation</label>
+                <input type="text" name="designation" value="{{ faculty.designation|default:'' }}" required
+                    style="width: 100%; padding: 8px;">
+            </div>
+            <div>
+                <label>Contact Number</label>
+                <input type="text" name="contact_number" value="{{ faculty.contact_number|default:'' }}"
+                    style="width: 100%; padding: 8px;">
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button type="submit"
+                style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Save
+                Faculty</button>
+            <a href="/admin-panel/faculty/"
+                style="padding: 10px 20px; background: #95a5a6; color: white; border-radius: 4px; text-decoration: none; margin-left: 10px;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

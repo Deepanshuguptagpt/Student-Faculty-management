@@ -1,6 +1,6 @@
 from django.db import models
 from authentication.models import User
-from backend.student.models import Course, SEMESTER_CHOICES
+from backend.student.models import Course, SEMESTER_CHOICES, BRANCH_CHOICES
 
 class Department(models.Model):
     name = models.CharField(max_length=150, unique=True)
@@ -38,6 +38,20 @@ class FacultyCourseAssignment(models.Model):
 
     class Meta:
         unique_together = ('faculty', 'course', 'semester')
+        verbose_name = 'Faculty Course Specialization'
+        verbose_name_plural = 'Faculty Course Specializations'
 
     def __str__(self):
-        return f"{self.faculty.user.name} - {self.course.code} ({self.semester})"
+        return f"{self.faculty.user.name} - Specializes in {self.course.code} ({self.semester})"
+
+class Assignment(models.Model):
+    title = models.CharField(max_length=250)
+    description = models.TextField(null=True, blank=True)
+    faculty = models.ForeignKey(FacultyProfile, on_delete=models.CASCADE, related_name='given_assignments')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_assignments')
+    branch = models.CharField(max_length=100, choices=BRANCH_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    due_date = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return self.title

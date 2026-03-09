@@ -45,7 +45,7 @@
             <h2>Institute Portal</h2>
         </div>
         <div class="nav-links">
-            <a href="/student/dashboard/" class="nav-item {% if request.path == '/student/dashboard/' %}active{% endif %}">Overview</a>
+            <a href="/student/dashboard/" class="nav-item {% if request.path  ==  '/student/dashboard/'  %}active{% endif %}">Overview</a>
             <a href="/student/dashboard/courses/" class="nav-item {% if '/courses/' in request.path %}active{% endif %}">My Courses</a>
             <a href="/student/dashboard/attendance/" class="nav-item {% if '/attendance/' in request.path %}active{% endif %}">Attendance</a>
             <a href="/student/dashboard/academics/" class="nav-item {% if '/academics/' in request.path %}active{% endif %}">Academics</a>

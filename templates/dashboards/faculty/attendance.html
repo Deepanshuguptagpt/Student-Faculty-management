@@ -11,16 +11,16 @@
             <select name="course_id" id="course_id"
                 style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;" required>
                 <option value="">-- Select Course --</option>
-                <optgroup label="My Assigned Courses">
+                <optgroup label="My Specializations / Can Teach">
                     {% for c in my_courses %}
-                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+                    <option value="{{ c.id }}" {% if selected_course_id  ==  c.id  %}selected{% endif %}>
                         {{ c.code }} - {{ c.name }}
                     </option>
                     {% endfor %}
                 </optgroup>
                 <optgroup label="Other Courses (Extra/Swapped)">
                     {% for c in other_courses %}
-                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+                    <option value="{{ c.id }}" {% if selected_course_id  ==  c.id  %}selected{% endif %}>
                         {{ c.code }} - {{ c.name }}
                     </option>
                     {% endfor %}
@@ -40,7 +40,7 @@
                 style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
                 <option value="">-- Select Lecture --</option>
                 {% for i in "1234567"|make_list %}
-                <option value="{{ i }}" {% if selected_lecture|stringformat:"s" == i %}selected{% endif %}>Lecture {{ i }}
+                <option value="{{ i }}" {% if selected_lecture|stringformat:"s"  ==  i  %}selected{% endif %}>Lecture {{ i }}
                 </option>
                 {% endfor %}
             </select>
@@ -85,11 +85,18 @@
                     <td>{{ item.student.enrollment_number }}</td>
                     <td>
                         <input type="hidden" name="student_ids" value="{{ item.student.id }}">
-                        <input type="hidden" name="statuses" id="status_{{ item.student.id }}" value="{{ item.status }}">
+                        <input type="hidden" name="statuses" id="status_{{ item.student.id }}"
+                            value="{{ item.status }}">
                         <div class="toggle-group" style="display: flex; gap: 5px;">
-                            <button type="button" class="btn-toggle present {% if item.status == 'Present' %}active{% endif %}" onclick="setStatus('{{ item.student.id }}', 'Present', this)">Present</button>
-                            <button type="button" class="btn-toggle absent {% if item.status == 'Absent' %}active{% endif %}" onclick="setStatus('{{ item.student.id }}', 'Absent', this)">Absent</button>
-                            <button type="button" class="btn-toggle late {% if item.status == 'Late' %}active{% endif %}" onclick="setStatus('{{ item.student.id }}', 'Late', this)">Late</button>
+                            <button type="button"
+                                class="btn-toggle present {% if item.status  ==  'Present'  %}active{% endif %}"
+                                onclick="setStatus('{{ item.student.id }}', 'Present', this)">Present</button>
+                            <button type="button"
+                                class="btn-toggle absent {% if item.status  ==  'Absent'  %}active{% endif %}"
+                                onclick="setStatus('{{ item.student.id }}', 'Absent', this)">Absent</button>
+                            <button type="button"
+                                class="btn-toggle late {% if item.status  ==  'Late'  %}active{% endif %}"
+                                onclick="setStatus('{{ item.student.id }}', 'Late', this)">Late</button>
                         </div>
                     </td>
                 </tr>
@@ -120,16 +127,19 @@
         color: #333;
         font-size: 14px;
     }
+
     .btn-toggle.active.present {
         background-color: #2ecc71;
         color: white;
         border-color: #2ecc71;
     }
+
     .btn-toggle.active.absent {
         background-color: #e74c3c;
         color: white;
         border-color: #e74c3c;
     }
+
     .btn-toggle.active.late {
         background-color: #f1c40f;
         color: white;
@@ -140,14 +150,14 @@
     function setStatus(studentId, status, btn) {
         // Update hidden input
         document.getElementById('status_' + studentId).value = status;
-        
+
         // Remove active class from all buttons in this row
         const group = btn.parentElement;
         const buttons = group.getElementsByClassName('btn-toggle');
         for (let b of buttons) {
             b.classList.remove('active');
         }
-        
+
         // Add active class to clicked button
         btn.classList.add('active');
     }

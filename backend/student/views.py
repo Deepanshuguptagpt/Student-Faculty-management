@@ -44,8 +44,19 @@ def student_dashboard(request):
 
 def student_attendance(request):
     profile = get_student_profile(request)
+    course_filter = request.GET.get('course_id')
     records = Attendance.objects.filter(student=profile).order_by('-date')
-    return render(request, "dashboards/student/attendance.html", {'profile': profile, 'records': records})
+    if course_filter:
+        records = records.filter(course_id=course_filter)
+        
+    enrolled_courses = Course.objects.filter(id__in=Enrollment.objects.filter(student=profile).values_list('course_id', flat=True))
+    
+    return render(request, "dashboards/student/attendance.html", {
+        'profile': profile, 
+        'records': records,
+        'courses': enrolled_courses,
+        'selected_course_id': int(course_filter) if course_filter else ''
+    })
 
 def student_fees(request):
     profile = get_student_profile(request)
@@ -61,4 +72,4 @@ def student_courses(request):
 def student_academics(request):
     profile = get_student_profile(request)
     records = AcademicRecord.objects.filter(student=profile)
-    return render(request, "dashboards/student/academics.html", {'profile': profile, 'records': records})
+    return render(request, "dashboards/student/academics.html", {'profile': profile, 'records': records})

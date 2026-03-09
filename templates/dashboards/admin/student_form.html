@@ -1,0 +1,66 @@
+{% extends 'dashboards/admin/base.html' %}
+
+{% block title %}{{ action }} Student{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>{{ action }} Student</h3>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <label>Name</label>
+                <input type="text" name="name" value="{{ user_obj.name|default:'' }}" required
+                    style="width: 100%; padding: 8px;">
+            </div>
+            <div>
+                <label>Email</label>
+                <input type="email" name="email" value="{{ user_obj.email|default:'' }}" required
+                    style="width: 100%; padding: 8px;">
+            </div>
+            <div>
+                <label>Enrollment Number</label>
+                <input type="text" name="enrollment_number" value="{{ student.enrollment_number|default:'' }}" required
+                    style="width: 100%; padding: 8px;">
+            </div>
+            <div>
+                <label>Branch</label>
+                <select name="branch" required style="width: 100%; padding: 8px;">
+                    <option value="">-- Select Branch --</option>
+                    {% for b in branches %}
+                    <option value="{{ b }}" {% if student.branch == b  %}selected{% endif %}>{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Course</label>
+                <select name="course_name" required style="width: 100%; padding: 8px;">
+                    <option value="">-- Select Course --</option>
+                    {% for c in courses %}
+                    <option value="{{ c }}" {% if student.course_name == c  %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Batch Year</label>
+                <input type="number" name="batch_year" value="{{ student.batch_year|default:'' }}" required
+                    style="width: 100%; padding: 8px;">
+            </div>
+            <div>
+                <label>Contact Number</label>
+                <input type="text" name="contact_number" value="{{ student.contact_number|default:'' }}"
+                    style="width: 100%; padding: 8px;">
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button type="submit"
+                style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Save
+                Student</button>
+            <a href="/admin-panel/students/"
+                style="padding: 10px 20px; background: #95a5a6; color: white; border-radius: 4px; text-decoration: none; margin-left: 10px;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
