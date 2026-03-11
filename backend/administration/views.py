@@ -88,7 +88,8 @@ def add_student(request):
                 branch=request.POST.get('branch'),
                 course_name=request.POST.get('course_name'),
                 batch_year=request.POST.get('batch_year'),
-                contact_number=request.POST.get('contact_number')
+                contact_number=request.POST.get('contact_number'),
+                section=request.POST.get('section')
             )
         return redirect('manage_students')
     return render(request, 'dashboards/admin/student_form.html', {
@@ -109,6 +110,7 @@ def edit_student(request, student_id):
         student.course_name = request.POST.get('course_name')
         student.batch_year = request.POST.get('batch_year')
         student.contact_number = request.POST.get('contact_number')
+        student.section = request.POST.get('section')
         student.save()
         return redirect('manage_students')
         

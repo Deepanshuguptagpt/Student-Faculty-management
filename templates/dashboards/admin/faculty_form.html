@@ -24,7 +24,7 @@
                 <select name="department_id" required style="width: 100%; padding: 8px;">
                     <option value="">-- Select Department --</option>
                     {% for d in departments %}
-                    <option value="{{ d.id }}" {% if faculty.department_id == d.id  %}selected{% endif %}>{{ d.name }}
+                    <option value="{{ d.id }}" {% if faculty.department_id == d.id %}selected{% endif %}>{{ d.name }}
                     </option>
                     {% endfor %}
                 </select>

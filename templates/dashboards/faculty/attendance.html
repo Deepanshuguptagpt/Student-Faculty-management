@@ -13,14 +13,14 @@
                 <option value="">-- Select Course --</option>
                 <optgroup label="My Specializations / Can Teach">
                     {% for c in my_courses %}
-                    <option value="{{ c.id }}" {% if selected_course_id  ==  c.id  %}selected{% endif %}>
+                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
                         {{ c.code }} - {{ c.name }}
                     </option>
                     {% endfor %}
                 </optgroup>
                 <optgroup label="Other Courses (Extra/Swapped)">
                     {% for c in other_courses %}
-                    <option value="{{ c.id }}" {% if selected_course_id  ==  c.id  %}selected{% endif %}>
+                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
                         {{ c.code }} - {{ c.name }}
                     </option>
                     {% endfor %}

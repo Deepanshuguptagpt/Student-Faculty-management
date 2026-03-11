@@ -1,6 +1,6 @@
 import pandas as pd
 
-df = pd.read_excel('Facultylist.xlsx')
+df = pd.read_excel('CSE1.xlsx')
 print("COLUMNS:")
 for col in df.columns:
     print(repr(col))

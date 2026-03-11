@@ -10,7 +10,7 @@
             <select name="course_id" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
                 <option value="">-- All Courses --</option>
                 {% for c in courses %}
-                <option value="{{ c.id }}" {% if selected_course_id == c.id  %}selected{% endif %}>{{ c.code }} - {{ c.name
+                <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>{{ c.code }} - {{ c.name
                     }}</option>
                 {% endfor %}
             </select>

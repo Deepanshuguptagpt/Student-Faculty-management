@@ -21,7 +21,7 @@
                 style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                 <option value="">-- All Branches --</option>
                 {% for b in branches %}
-                <option value="{{ b }}" {% if selected_branch == b  %}selected{% endif %}>{{ b }}</option>
+                <option value="{{ b }}" {% if selected_branch == b %}selected{% endif %}>{{ b }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -40,7 +40,7 @@
                 style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                 <option value="">-- All Courses --</option>
                 {% for c in courses %}
-                <option value="{{ c }}" {% if selected_course == c  %}selected{% endif %}>{{ c }}</option>
+                <option value="{{ c }}" {% if selected_course == c %}selected{% endif %}>{{ c }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -60,6 +60,7 @@
                 <th>Name</th>
                 <th>Email</th>
                 <th>Branch</th>
+                <th>Section</th>
                 <th>Current Year & Sem</th>
                 <th>Batch Year</th>
                 <th>Contact</th>
@@ -73,6 +74,7 @@
                 <td>{{ student.user.name }}</td>
                 <td>{{ student.user.email }}</td>
                 <td>{{ student.branch }}</td>
+                <td>{{ student.section|default:"-" }}</td>
                 <td>{{ student.current_year }}, {{ student.current_semester }}</td>
                 <td>{{ student.batch_year }}</td>
                 <td>{{ student.contact_number }}</td>

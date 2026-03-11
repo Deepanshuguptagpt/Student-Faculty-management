@@ -29,16 +29,21 @@
                 <select name="branch" required style="width: 100%; padding: 8px;">
                     <option value="">-- Select Branch --</option>
                     {% for b in branches %}
-                    <option value="{{ b }}" {% if student.branch == b  %}selected{% endif %}>{{ b }}</option>
+                    <option value="{{ b }}" {% if student.branch == b %}selected{% endif %}>{{ b }}</option>
                     {% endfor %}
                 </select>
+            </div>
+            <div>
+                <label>Section</label>
+                <input type="text" name="section" value="{{ student.section|default:'' }}"
+                    style="width: 100%; padding: 8px;">
             </div>
             <div>
                 <label>Course</label>
                 <select name="course_name" required style="width: 100%; padding: 8px;">
                     <option value="">-- Select Course --</option>
                     {% for c in courses %}
-                    <option value="{{ c }}" {% if student.course_name == c  %}selected{% endif %}>{{ c }}</option>
+                    <option value="{{ c }}" {% if student.course_name == c %}selected{% endif %}>{{ c }}</option>
                     {% endfor %}
                 </select>
             </div>
