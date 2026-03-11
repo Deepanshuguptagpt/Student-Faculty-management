@@ -158,6 +158,7 @@ def faculty_assignments(request):
         description = request.POST.get('description')
         course_id = request.POST.get('course_id')
         branch = request.POST.get('branch')
+        year = request.POST.get('year')
         due_date = request.POST.get('due_date')
         if title and course_id and branch:
             from .models import Assignment
@@ -167,6 +168,7 @@ def faculty_assignments(request):
                 description=description,
                 course_id=course_id,
                 branch=branch,
+                year=year,
                 due_date=due_date if due_date else None
             )
         return redirect('faculty_assignments')
@@ -174,9 +176,27 @@ def faculty_assignments(request):
     from .models import Assignment
     assignments = Assignment.objects.filter(faculty=profile).order_by('-created_at')
     
+    # Apply filters
+    branch_filter = request.GET.get('branch')
+    year_filter = request.GET.get('year')
+    course_filter = request.GET.get('course')
+    
+    if branch_filter:
+        assignments = assignments.filter(branch=branch_filter)
+    if year_filter:
+        assignments = assignments.filter(year=year_filter)
+    if course_filter:
+        assignments = assignments.filter(course_id=course_filter)
+    
+    year_choices = ['1st year', '2nd year', '3rd year', '4th year']
+    
     return render(request, "dashboards/faculty/assignments.html", {
         'profile': profile,
         'courses': courses,
         'branches': [b[0] for b in BRANCH_CHOICES],
-        'assignments': assignments
+        'years': year_choices,
+        'assignments': assignments,
+        'selected_branch': branch_filter,
+        'selected_year': year_filter,
+        'selected_course': course_filter
     })
