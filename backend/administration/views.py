@@ -22,6 +22,7 @@ def admin_dashboard(request):
 
 
 def manage_students(request):
+    from datetime import date
     students = StudentProfile.objects.all().select_related('user')
     
     branch_filter = request.GET.get('branch')
@@ -31,9 +32,24 @@ def manage_students(request):
     if branch_filter:
         students = students.filter(branch=branch_filter)
     if year_filter:
-        students = students.filter(batch_year=year_filter)
+        # Filter by current year (1st, 2nd, 3rd, 4th)
+        current_year = date.today().year
+        current_month = date.today().month
+        year_num = int(year_filter.split()[0][0])  # Extract number from "1st year", "2nd year", etc.
+        
+        # Calculate batch years that correspond to this year level
+        if current_month >= 7:
+            # After July, new academic year has started
+            target_batch = current_year - (year_num - 1)
+        else:
+            # Before July, still in previous academic year
+            target_batch = current_year - year_num
+        
+        students = students.filter(batch_year=target_batch)
     if course_filter:
         students = students.filter(course_name=course_filter)
+
+    year_choices = ['1st year', '2nd year', '3rd year', '4th year']
 
     return render(request, "dashboards/admin/students.html", {
         'students': students, 
@@ -41,7 +57,8 @@ def manage_students(request):
         'selected_year': year_filter, 
         'selected_course': course_filter,
         'branches': [b[0] for b in BRANCH_CHOICES],
-        'courses': [c[0] for c in COURSE_CHOICES]
+        'courses': [c[0] for c in COURSE_CHOICES],
+        'years': year_choices
     })
 
 
