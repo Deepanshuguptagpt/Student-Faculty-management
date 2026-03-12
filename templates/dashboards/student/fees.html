@@ -8,7 +8,7 @@
         <h3>Financial Overview</h3>
         <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; border-left: 4px solid #dc3545;">
             <h4 style="margin: 0; color: #666; font-size: 16px;">Remaining Balance</h4>
-            <p style="margin: 10px 0 0; font-size: 36px; font-weight: bold; color: #dc3545;">${{ total_due }}</p>
+            <p style="margin: 10px 0 0; font-size: 36px; font-weight: bold; color: #dc3545;">₹{{ total_due }}</p>
         </div>
     </div>
 
@@ -28,8 +28,8 @@
             {% for fee in records %}
             <tr>
                 <td><strong>{{ fee.semester }}</strong></td>
-                <td>${{ fee.amount_due }}</td>
-                <td>${{ fee.amount_paid }}</td>
+                <td>₹{{ fee.amount_due }}</td>
+                <td>₹{{ fee.amount_paid }}</td>
                 <td>{{ fee.due_date|date:"F d, Y" }}</td>
                 <td>
                     <span class="status-badge {% if fee.status  ==  'Paid'  %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">

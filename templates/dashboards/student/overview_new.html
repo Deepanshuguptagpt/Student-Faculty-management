@@ -1,0 +1,265 @@
+{% extends 'dashboards/student/base_new.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <h2>Welcome back, {{ profile.user.name|default:"Student" }}!</h2>
+    <p>Here's what's happening with your academics today</p>
+</div>
+
+<!-- Quick Stats Grid -->
+<div class="stats-grid">
+    <!-- Attendance Card -->
+    <div class="stat-card attendance">
+        <div class="stat-label">Overall Attendance</div>
+        <div class="stat-value">{{ attendance_percentage|default:"0" }}%</div>
+        <div class="stat-subtext">Keep it up!</div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ attendance_percentage|default:"0" }}%;"></div>
+        </div>
+    </div>
+
+    <!-- Courses Card -->
+    <div class="stat-card courses">
+        <div class="stat-label">Enrolled Courses</div>
+        <div class="stat-value">{{ enrollments|length|default:"0" }}</div>
+        <div class="stat-subtext">Active this semester</div>
+    </div>
+
+    <!-- Fees Card -->
+    <div class="stat-card fees">
+        <div class="stat-label">Fees Due</div>
+        <div class="stat-value">₹{{ total_due|default:"0" }}</div>
+        <div class="stat-subtext">{% if total_due > 0 %}Payment pending{% else %}All clear!{% endif %}</div>
+    </div>
+
+    <!-- Grades Card -->
+    <div class="stat-card grades">
+        <div class="stat-label">Academic Status</div>
+        <div class="stat-value">{{ records|length|default:"0" }}</div>
+        <div class="stat-subtext">Courses graded</div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="content-grid">
+    <!-- Left Column: Tabbed Content -->
+    <div class="card">
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('attendance')">Attendance</button>
+            <button class="tab-btn" onclick="switchTab('courses')">Courses</button>
+            <button class="tab-btn" onclick="switchTab('grades')">Grades</button>
+            <button class="tab-btn" onclick="switchTab('fees')">Fees</button>
+        </div>
+
+        <!-- Attendance Tab -->
+        <div id="attendance-tab" class="tab-content active">
+            <h3>Recent Attendance</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Course</th>
+                        <th>Lecture</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for att in attendance_records %}
+                    <tr>
+                        <td>{{ att.date|date:"M d, Y" }}</td>
+                        <td><strong>{{ att.course.code }}</strong></td>
+                        <td>{{ att.lecture_number|default:"-" }}</td>
+                        <td>
+                            <span class="status-badge {% if att.status == 'Present' %}status-present{% elif att.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
+                                {{ att.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 40px;">No attendance records yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Courses Tab -->
+        <div id="courses-tab" class="tab-content">
+            <h3>My Courses</h3>
+            {% for enrollment in enrollments %}
+            <div class="course-item">
+                <div class="course-code">{{ enrollment.course.code }}</div>
+                <div class="course-name">{{ enrollment.course.name }}</div>
+                <div class="course-meta">
+                    Semester {{ enrollment.semester }} • {{ enrollment.course.credits }} Credits
+                </div>
+            </div>
+            {% empty %}
+            <p style="text-align: center; color: #94a3b8; padding: 40px;">No courses enrolled</p>
+            {% endfor %}
+        </div>
+
+        <!-- Grades Tab -->
+        <div id="grades-tab" class="tab-content">
+            <h3>Academic Records</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Semester</th>
+                        <th>Grade</th>
+                        <th>Marks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td>
+                            <strong>{{ record.course.code }}</strong><br>
+                            <span style="font-size: 12px; color: #94a3b8;">{{ record.course.name }}</span>
+                        </td>
+                        <td>{{ record.semester }}</td>
+                        <td><strong style="font-size: 18px; color: #2563EB;">{{ record.grade }}</strong></td>
+                        <td>{{ record.marks|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 40px;">No grades available yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Fees Tab -->
+        <div id="fees-tab" class="tab-content">
+            <h3>Fee History</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Semester</th>
+                        <th>Billed</th>
+                        <th>Paid</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fee in fee_records %}
+                    <tr>
+                        <td><strong>{{ fee.semester }}</strong></td>
+                        <td>₹{{ fee.amount_due }}</td>
+                        <td>₹{{ fee.amount_paid }}</td>
+                        <td>{{ fee.due_date|date:"M d, Y" }}</td>
+                        <td>
+                            <span class="status-badge {% if fee.status == 'Paid' %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
+                                {{ fee.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 40px;">No fee records found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Right Column: Profile & Quick Info -->
+    <div>
+        <!-- Profile Card -->
+        <div class="card" style="margin-bottom: 24px;">
+            <h3>My Profile</h3>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #2563EB, #6366F1); display: flex; align-items: center; justify-content: center; color: white; font-size: 36px; font-weight: 700; margin: 0 auto 15px;">
+                    {{ profile.user.name|first|upper }}
+                </div>
+                <h4 style="margin: 0; color: #1e293b;">{{ profile.user.name }}</h4>
+                <p style="color: #64748b; font-size: 13px; margin: 4px 0;">{{ profile.enrollment_number }}</p>
+            </div>
+            <div style="background: #f8fafc; padding: 16px; border-radius: 12px; font-size: 14px;">
+                <div style="margin-bottom: 12px;">
+                    <span style="color: #64748b;">Email:</span><br>
+                    <strong style="color: #334155;">{{ profile.user.email }}</strong>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <span style="color: #64748b;">Batch:</span><br>
+                    <strong style="color: #334155;">{{ profile.batch_year }}</strong>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <span style="color: #64748b;">Contact:</span><br>
+                    <strong style="color: #334155;">{{ profile.contact_number|default:"Not provided" }}</strong>
+                </div>
+                {% if profile.course_name %}
+                <div style="margin-bottom: 12px;">
+                    <span style="color: #64748b;">Course:</span><br>
+                    <strong style="color: #334155;">{{ profile.course_name }}</strong>
+                </div>
+                {% endif %}
+                {% if profile.branch %}
+                <div style="margin-bottom: 12px;">
+                    <span style="color: #64748b;">Branch:</span><br>
+                    <strong style="color: #334155;">{{ profile.branch }}</strong>
+                </div>
+                {% endif %}
+                {% if profile.section %}
+                <div>
+                    <span style="color: #64748b;">Section:</span><br>
+                    <strong style="color: #334155;">{{ profile.section }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="card">
+            <h3>Quick Actions</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button style="background: linear-gradient(135deg, #2563EB, #6366F1); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(37, 99, 235, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(37, 99, 235, 0.3)'">
+                    Download Transcript
+                </button>
+                <button style="background: linear-gradient(135deg, #10B981, #059669); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'">
+                    Pay Fees Online
+                </button>
+                <button style="background: linear-gradient(135deg, #6366F1, #8b5cf6); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(99, 102, 241, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(99, 102, 241, 0.3)'">
+                    Contact Support
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
+}
+
+// Animate progress bars on load
+window.addEventListener('load', function() {
+    const progressBars = document.querySelectorAll('.progress-fill');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 100);
+    });
+});
+</script>
+
+{% endblock %}

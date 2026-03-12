@@ -1,32 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-<title>Login</title>
-<link rel="stylesheet" href="/static/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ role }} Login - Indore Institute</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
 <body>
 
 <div class="login-box">
 
-<h2>{{ role }} Login</h2>
+    <h2>{{ role }} Login</h2>
 
-<form method="POST">
+    <form method="POST">
 
-{% csrf_token %}
+        {% csrf_token %}
 
-{% if error %}
-<p style="color: red;">{{ error }}</p>
-{% endif %}
+        {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+        {% endif %}
 
-<input type="email" name="email" placeholder="Institute Email" required>
+        <input type="email" name="email" placeholder="Institute Email" required>
 
-<input type="password" name="password" placeholder="Password" required>
+        <input type="password" name="password" placeholder="Password" required>
 
-<button type="submit">Login</button>
+        <button type="submit" style="width: 100%; margin-top: 10px;">Sign In</button>
 
-</form>
+    </form>
+
+    <p style="text-align: center; margin-top: 20px; color: #605E5C; font-size: 14px;">
+        <a href="/auth/login-options/" style="color: #0078D4; text-decoration: none;">← Back to Login Options</a>
+    </p>
 
 </div>
 

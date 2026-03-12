@@ -1,28 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Select Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Login - Indore Institute</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .choice-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+
+        .choice-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            min-width: 220px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            border: 3px solid transparent;
+        }
+
+        .choice-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .choice-card.student {
+            border-color: #8764B8;
+        }
+
+        .choice-card.student:hover {
+            background: linear-gradient(135deg, rgba(135, 100, 184, 0.1), rgba(107, 76, 154, 0.1));
+        }
+
+        .choice-card.faculty {
+            border-color: #00B7C3;
+        }
+
+        .choice-card.faculty:hover {
+            background: linear-gradient(135deg, rgba(0, 183, 195, 0.1), rgba(0, 139, 148, 0.1));
+        }
+
+        .choice-card.admin {
+            border-color: #0078D4;
+        }
+
+        .choice-card.admin:hover {
+            background: linear-gradient(135deg, rgba(0, 120, 212, 0.1), rgba(0, 90, 158, 0.1));
+        }
+
+        .choice-card .icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .choice-card h3 {
+            color: #323130;
+            margin-bottom: 10px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .choice-card p {
+            color: #605E5C;
+            font-size: 14px;
+        }
+
+        .hero-content {
+            margin-bottom: 50px;
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="container">
+    <div class="hero-content">
+        <h1>Welcome Back!</h1>
+        <p class="subtitle">Select your login type to continue</p>
+    </div>
 
-<h2>Select Login Type</h2>
+    <div class="choice-container">
+        <a href="/auth/login/student/" class="choice-card student">
+            <div class="icon">🎓</div>
+            <h3>Student</h3>
+            <p>Access your courses, grades & attendance</p>
+        </a>
 
-<a href="/auth/login/student/">
-<button>Student Login</button>
-</a>
+        <a href="/auth/login/faculty/" class="choice-card faculty">
+            <div class="icon">👨‍🏫</div>
+            <h3>Faculty</h3>
+            <p>Manage courses, assignments & students</p>
+        </a>
 
-<a href="/auth/login/faculty/">
-<button>Faculty Login</button>
-</a>
+        <a href="/auth/login/admin/" class="choice-card admin">
+            <div class="icon">⚙️</div>
+            <h3>Admin</h3>
+            <p>Control panel & system management</p>
+        </a>
+    </div>
 
-<a href="/auth/login/admin/">
-<button>Admin Login</button>
-</a>
-
+    <p style="text-align: center; margin-top: 30px;">
+        <a href="/auth/" style="color: white; text-decoration: none; font-size: 14px; opacity: 0.9;">← Back to Home</a>
+    </p>
 </div>
 
 </body>

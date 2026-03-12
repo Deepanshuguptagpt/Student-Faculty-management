@@ -6,43 +6,287 @@
     <title>Student Portal - {% block title %}Dashboard{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; min-height: 100vh; }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #8764B8 0%, #6B4C9A 100%);
+            display: flex; 
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(135, 100, 184, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(107, 76, 154, 0.2) 0%, transparent 50%);
+            z-index: 0;
+            pointer-events: none;
+        }
         
         /* Sidebar Styles */
-        .sidebar { width: 250px; background-color: #2c3e50; color: white; display: flex; flex-direction: column; }
-        .sidebar-header { padding: 20px; text-align: center; background-color: #1a252f; border-bottom: 1px solid #34495e; }
-        .sidebar-header h2 { margin: 0; font-size: 20px; }
+        .sidebar { 
+            width: 260px; 
+            background: linear-gradient(180deg, #8764B8 0%, #6B4C9A 100%);
+            color: white; 
+            display: flex; 
+            flex-direction: column;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 10;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.03)"/></svg>');
+            opacity: 0.5;
+        }
+
+        .sidebar-header { 
+            padding: 30px 20px; 
+            text-align: center; 
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .sidebar-header h2 { 
+            margin: 0; 
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-header .portal-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-top: 8px;
+            font-weight: 500;
+        }
         
-        .nav-links { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; flex-grow: 1; }
-        .nav-item { padding: 15px 20px; border-bottom: 1px solid #34495e; text-decoration: none; color: #b8c7ce; transition: 0.3s; display: block; }
-        .nav-item:hover, .nav-item.active { background-color: #34495e; color: white; border-left: 4px solid #3498db; padding-left: 16px; }
+        .nav-links { 
+            list-style: none; 
+            padding: 20px 0; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .nav-item { 
+            padding: 16px 24px; 
+            text-decoration: none; 
+            color: rgba(255, 255, 255, 0.85);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+            position: relative;
+        }
+
+        .nav-item::before {
+            content: '▸';
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding-left: 28px;
+        }
+
+        .nav-item:hover::before {
+            opacity: 1;
+        }
+
+        .nav-item.active { 
+            background: rgba(255, 255, 255, 0.2);
+            color: white; 
+            border-left-color: #C7A8FF;
+            font-weight: 600;
+        }
+
+        .nav-item.active::before {
+            opacity: 1;
+        }
         
         /* Main Content Styles */
-        .main-content { flex-grow: 1; display: flex; flex-direction: column; }
+        .main-content { 
+            flex-grow: 1; 
+            display: flex; 
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
         
-        .topbar { background-color: #fff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .user-info { font-weight: bold; color: #333; }
-        .btn-logout { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .topbar { 
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 20px 35px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            border-bottom: 1px solid rgba(135, 100, 184, 0.1);
+        }
+
+        .user-info { 
+            font-weight: 600; 
+            color: #323130;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info::before {
+            content: '';
+            font-size: 20px;
+        }
+
+        .btn-logout { 
+            background: linear-gradient(135deg, #E81123, #C50F1F);
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            text-decoration: none; 
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(232, 17, 35, 0.3);
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(232, 17, 35, 0.4);
+        }
         
-        .content-area { padding: 30px; overflow-y: auto; }
+        .content-area { 
+            padding: 35px; 
+            overflow-y: auto;
+            background: rgba(243, 242, 241, 0.5);
+        }
         
         /* Reusable Card Styles */
-        .card { background: #fff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
-        .card h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        table th { background-color: #f8f9fa; color: #333; }
-        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-        .status-paid, .status-present { background: #d4edda; color: #155724; }
-        .status-pending, .status-late { background: #fff3cd; color: #856404; }
-        .status-overdue, .status-absent { background: #f8d7da; color: #721c24; }
+        .card { 
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 28px; 
+            margin-bottom: 24px;
+            border: 1px solid rgba(135, 100, 184, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card h3 { 
+            margin-top: 0; 
+            color: #8764B8;
+            border-bottom: 2px solid #F3F2F1;
+            padding-bottom: 15px;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px;
+        }
+
+        table th, table td { 
+            padding: 14px 12px; 
+            text-align: left; 
+            border-bottom: 1px solid #EDEBE9;
+        }
+
+        table th { 
+            background: linear-gradient(135deg, #F3F2F1, #FAF9F8);
+            color: #323130;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        table tr:hover {
+            background: rgba(135, 100, 184, 0.05);
+        }
+
+        .status-badge { 
+            padding: 6px 12px; 
+            border-radius: 16px; 
+            font-size: 12px; 
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-paid, .status-present { 
+            background: linear-gradient(135deg, #DFF6DD, #C7E0C7);
+            color: #107C10;
+        }
+
+        .status-pending, .status-late { 
+            background: linear-gradient(135deg, #FFF4CE, #FFE7A0);
+            color: #8A6116;
+        }
+
+        .status-overdue, .status-absent { 
+            background: linear-gradient(135deg, #FDE7E9, #F4C7CC);
+            color: #A80000;
+        }
+
+        /* Alert Styles */
+        .alert {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert-error {
+            border-left-color: #E81123;
+            background: linear-gradient(135deg, #FDE7E9, #FFFFFF);
+            color: #A80000;
+        }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Institute Portal</h2>
+            <h2>Student Portal</h2>
+            <span class="portal-badge">Indore Institute</span>
         </div>
         <div class="nav-links">
             <a href="/student/dashboard/" class="nav-item {% if request.path  ==  '/student/dashboard/'  %}active{% endif %}">Overview</a>
@@ -63,9 +307,8 @@
         
         <div class="content-area">
             {% if error %}
-            <div class="card" style="background-color: #f8d7da; color: #721c24; border-left: 4px solid #dc3545;">
-                <h3>Notice</h3>
-                <p>{{ error }}</p>
+            <div class="alert alert-error">
+                <strong>Notice:</strong> {{ error }}
             </div>
             {% endif %}
 

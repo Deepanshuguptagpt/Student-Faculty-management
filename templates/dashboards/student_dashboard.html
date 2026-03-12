@@ -67,11 +67,11 @@
                 <div class="stat-grid">
                     <div class="stat-box" style="border-left-color: #dc3545;">
                         <h4>Total Due</h4>
-                        <p style="color: #dc3545;">${{ total_due }}</p>
+                        <p style="color: #dc3545;">₹{{ total_due }}</p>
                     </div>
                     <div class="stat-box" style="border-left-color: #28a745;">
                         <h4>Total Paid</h4>
-                        <p style="color: #28a745;">${{ total_paid }}</p>
+                        <p style="color: #28a745;">₹{{ total_paid }}</p>
                     </div>
                 </div>
             </div>
@@ -83,7 +83,7 @@
                     {% for fee in fee_records %}
                     <tr>
                         <td>{{ fee.semester }}</td>
-                        <td>${{ fee.amount_due }}</td>
+                        <td>₹{{ fee.amount_due }}</td>
                         <td>
                             <span class="status-badge {% if fee.status  ==  'Paid'  %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
                                 {{ fee.status }}

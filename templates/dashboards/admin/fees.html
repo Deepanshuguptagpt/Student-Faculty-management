@@ -8,7 +8,7 @@
     <h3>Institute Financial Overview</h3>
     <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; border-left: 4px solid #e74c3c;">
         <h4 style="margin: 0; color: #666; font-size: 16px;">Total Outstanding Dues</h4>
-        <p style="margin: 10px 0 0; font-size: 36px; font-weight: bold; color: #e74c3c;">${{ total_dues }}</p>
+        <p style="margin: 10px 0 0; font-size: 36px; font-weight: bold; color: #e74c3c;">₹{{ total_dues }}</p>
     </div>
 </div>
 
@@ -80,8 +80,8 @@
                 <td>{{ fee.student.user.name }}</td>
                 <td>{{ fee.student.enrollment_number }}</td>
                 <td>{{ fee.semester }}</td>
-                <td>${{ fee.amount_due }}</td>
-                <td>${{ fee.amount_paid }}</td>
+                <td>₹{{ fee.amount_due }}</td>
+                <td>₹{{ fee.amount_paid }}</td>
                 <td>
                     <span
                         class="status-badge {% if fee.status  ==  'Paid'  %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
