@@ -20,6 +20,7 @@ def admin_dashboard(request):
     branch_filter = request.GET.get('branch')
     year_filter = request.GET.get('year')
     course_filter = request.GET.get('course')
+    section_filter = request.GET.get('section')
     active_tab = request.GET.get('tab', 'students')
     
     if branch_filter:
@@ -42,12 +43,17 @@ def admin_dashboard(request):
         students = students.filter(batch_year=target_batch)
     if course_filter:
         students = students.filter(course_name=course_filter)
+    if section_filter:
+        students = students.filter(section=section_filter)
     
     # Get faculty and fees for tabs
     faculty = FacultyProfile.objects.all().select_related('user', 'department').order_by('department__name')
     fees = FeeRecord.objects.all().select_related('student__user').order_by('-due_date')[:50]
     
     year_choices = ['1st year', '2nd year', '3rd year', '4th year']
+    
+    # Get unique sections from students (excluding None/empty)
+    sections = StudentProfile.objects.exclude(section__isnull=True).exclude(section='').values_list('section', flat=True).distinct().order_by('section')
     
     context = {
         'total_students': total_students,
@@ -61,9 +67,11 @@ def admin_dashboard(request):
         'branches': [b[0] for b in BRANCH_CHOICES],
         'years': year_choices,
         'courses': [c[0] for c in COURSE_CHOICES],
+        'sections': list(sections),
         'selected_branch': branch_filter,
         'selected_year': year_filter,
         'selected_course': course_filter,
+        'selected_section': section_filter,
         'active_tab': active_tab
     }
     return render(request, "dashboards/admin/overview_new.html", context)

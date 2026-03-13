@@ -73,6 +73,15 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Section</label>
+                    <select name="section" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <option value="">-- All Sections --</option>
+                        {% for s in sections %}
+                        <option value="{{ s }}" {% if selected_section == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div>
                     <button type="submit" class="btn-primary">Apply Filters</button>
                     <a href="/admin-panel/dashboard/?tab=students" class="btn-primary" style="background: #94A3B8; margin-left: 10px; text-decoration: none;">Clear</a>
@@ -87,6 +96,7 @@
                     <th>Name</th>
                     <th>Email</th>
                     <th>Branch</th>
+                    <th>Section</th>
                     <th>Year & Sem</th>
                     <th>Batch</th>
                     <th>Actions</th>
@@ -99,6 +109,7 @@
                     <td>{{ student.user.name }}</td>
                     <td>{{ student.user.email }}</td>
                     <td>{{ student.branch }}</td>
+                    <td><strong>{{ student.section|default:"-" }}</strong></td>
                     <td>{{ student.current_year }}, {{ student.current_semester }}</td>
                     <td>{{ student.batch_year }}</td>
                     <td>
@@ -107,7 +118,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" style="text-align: center; color: #94A3B8; padding: 40px;">No students found</td></tr>
+                <tr><td colspan="8" style="text-align: center; color: #94A3B8; padding: 40px;">No students found</td></tr>
                 {% endfor %}
             </tbody>
         </table>
