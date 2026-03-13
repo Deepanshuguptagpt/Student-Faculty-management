@@ -1,0 +1,400 @@
+{% extends 'dashboards/faculty/base_new.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Quick Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Courses</div>
+        <div class="stat-value">{{ total_courses|default:"0" }}</div>
+        <div class="stat-subtext">Teaching this semester</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">Total Credits</div>
+        <div class="stat-value">{{ total_credits|default:"0" }}</div>
+        <div class="stat-subtext">Credits taught</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value">~{{ total_students|default:"0" }}</div>
+        <div class="stat-subtext">Across all courses</div>
+    </div>
+</div>
+
+<!-- Main Content with Tabs -->
+<div class="card">
+    <div class="tab-nav">
+        <button class="tab-btn {% if active_tab == 'profile' or not active_tab %}active{% endif %}" onclick="switchTab('profile')">Profile</button>
+        <button class="tab-btn {% if active_tab == 'courses' %}active{% endif %}" onclick="switchTab('courses')">My Courses</button>
+        <button class="tab-btn {% if active_tab == 'assignments' %}active{% endif %}" onclick="switchTab('assignments')">Assignments</button>
+        <button class="tab-btn {% if active_tab == 'attendance' %}active{% endif %}" onclick="switchTab('attendance')">Take Attendance</button>
+        <button class="tab-btn {% if active_tab == 'analytics' %}active{% endif %}" onclick="switchTab('analytics')">Analytics</button>
+    </div>
+
+    <!-- Profile Tab -->
+    <div id="profile-tab" class="tab-content {% if active_tab == 'profile' or not active_tab %}active{% endif %}">
+        <h3>Faculty Profile</h3>
+        {% if profile %}
+        <div style="display: grid; grid-template-columns: 150px 1fr; gap: 30px; align-items: start;">
+            <div style="width: 150px; height: 150px; background: linear-gradient(135deg, #1E3A8A, #4F46E5); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px; color: white; font-weight: 700;">
+                {{ profile.user.name|first|upper }}
+            </div>
+            <div>
+                <h2 style="margin-top: 0; margin-bottom: 5px; color: #0F172A;">{{ profile.user.name }}</h2>
+                <p style="color: #475569; margin-top: 0; font-size: 16px;">{{ profile.designation }}</p>
+
+                <div style="background: #F8FAFC; padding: 20px; border-radius: 12px; margin-top: 20px;">
+                    <div style="margin-bottom: 15px;">
+                        <span style="color: #475569; font-weight: 600;">Email:</span><br>
+                        <span style="color: #0F172A;">{{ profile.user.email }}</span>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span style="color: #475569; font-weight: 600;">Department:</span><br>
+                        <span style="color: #0F172A;">{{ profile.department.name }} ({{ profile.department.code }})</span>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span style="color: #475569; font-weight: 600;">Contact Number:</span><br>
+                        <span style="color: #0F172A;">{{ profile.contact_number|default:"Not Provided" }}</span>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span style="color: #475569; font-weight: 600;">Address:</span><br>
+                        <span style="color: #0F172A;">{{ profile.address|default:"Not Provided" }}</span>
+                    </div>
+                    <div>
+                        <span style="color: #475569; font-weight: 600;">Date Joined:</span><br>
+                        <span style="color: #0F172A;">{{ profile.date_joined|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p style="text-align: center; color: #94A3B8; padding: 40px;">Profile details not available.</p>
+        {% endif %}
+    </div>
+
+    <!-- Courses Tab -->
+    <div id="courses-tab" class="tab-content {% if active_tab == 'courses' %}active{% endif %}">
+        <h3>My Workload & Courses</h3>
+        {% if workload_data %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Semester</th>
+                    <th>Course</th>
+                    <th>Credits</th>
+                    <th>Enrolled Students</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in workload_data %}
+                <tr>
+                    <td>{{ item.assignment.semester }}</td>
+                    <td><strong>{{ item.assignment.course.code }}</strong> - {{ item.assignment.course.name }}</td>
+                    <td>{{ item.credits }}</td>
+                    <td>{{ item.student_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="text-align: center; color: #94A3B8; padding: 40px;">No workload data available.</p>
+        {% endif %}
+    </div>
+
+    <!-- Assignments Tab -->
+    <div id="assignments-tab" class="tab-content {% if active_tab == 'assignments' %}active{% endif %}">
+        <h3>Assignment Management</h3>
+        
+        <!-- Create Assignment Form -->
+        <div style="background: #F8FAFC; padding: 24px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #E2E8F0;">
+            <h4 style="margin-top: 0; color: #1E3A8A; margin-bottom: 20px;">Create New Assignment</h4>
+            <form method="POST" action="/faculty/dashboard/">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_assignment">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Assignment Title *</label>
+                        <input type="text" name="title" required placeholder="Enter assignment title" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Due Date</label>
+                        <input type="date" name="due_date" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Course *</label>
+                        <select name="course_id" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                            <option value="">-- Select Course --</option>
+                            {% for c in courses %}
+                            <option value="{{ c.id }}">{{ c.code }} - {{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Branch *</label>
+                        <select name="branch" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                            <option value="">-- Select Branch --</option>
+                            {% for b in branches %}
+                            <option value="{{ b }}">{{ b }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Year *</label>
+                        <select name="year" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                            <option value="">-- Select Year --</option>
+                            {% for y in years %}
+                            <option value="{{ y }}">{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Description / Instructions</label>
+                        <textarea name="description" rows="3" placeholder="Enter assignment description..." style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn-success" style="margin-top: 15px;">Post Assignment</button>
+            </form>
+        </div>
+
+        <!-- Filter Section -->
+        <div style="background: #F8FAFC; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #E2E8F0;">
+            <form method="GET" action="/faculty/dashboard/" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <input type="hidden" name="tab" value="assignments">
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Branch</label>
+                    <select name="branch" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <option value="">-- All Branches --</option>
+                        {% for b in branches %}
+                        <option value="{{ b }}" {% if selected_branch == b %}selected{% endif %}>{{ b }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Year</label>
+                    <select name="year" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <option value="">-- All Years --</option>
+                        {% for y in years %}
+                        <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Course</label>
+                    <select name="course" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <option value="">-- All Courses --</option>
+                        {% for c in courses %}
+                        <option value="{{ c.id }}" {% if selected_course == c.id|stringformat:"s" %}selected{% endif %}>{{ c.code }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="btn-primary">Apply Filters</button>
+                    <a href="/faculty/dashboard/?tab=assignments" class="btn-primary" style="background: #94A3B8; margin-left: 10px;">Clear</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Assignments List -->
+        <h4 style="color: #1E3A8A; margin-bottom: 15px;">Previously Given Assignments</h4>
+        {% if assignment_list %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Course</th>
+                    <th>Branch</th>
+                    <th>Year</th>
+                    <th>Due Date</th>
+                    <th>Posted On</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in assignment_list %}
+                <tr>
+                    <td><strong>{{ a.title }}</strong></td>
+                    <td><span style="background: #E0E7FF; color: #3730A3; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.course.code }}</span></td>
+                    <td><span style="background: #F3E8FF; color: #6B21A8; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.branch }}</span></td>
+                    <td><span style="background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.year|default:"N/A" }}</span></td>
+                    <td>{{ a.due_date|date:"M d, Y"|default:"No due date" }}</td>
+                    <td>{{ a.created_at|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="text-align: center; color: #94A3B8; padding: 40px;">No assignments found. Create your first assignment above!</p>
+        {% endif %}
+    </div>
+
+    <!-- Attendance Tab -->
+    <div id="attendance-tab" class="tab-content {% if active_tab == 'attendance' %}active{% endif %}">
+        <h3>Take Attendance</h3>
+        <form method="GET" action="/faculty/dashboard/attendance/" style="background: #F8FAFC; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Course:</label>
+                    <select name="course_id" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <option value="">-- Select Course --</option>
+                        {% for c in my_courses %}
+                        <option value="{{ c.id }}">{{ c.code }} - {{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Date:</label>
+                    <input type="date" name="date" id="attendance-date" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                    <small style="color: #64748b; font-size: 12px; display: block; margin-top: 4px;">Only current and previous dates (excluding Sundays)</small>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Lecture:</label>
+                    <select name="lecture_number" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <option value="">-- Select --</option>
+                        {% for i in "1234567"|make_list %}
+                        <option value="{{ i }}">Lecture {{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 15px;">Load Students</button>
+        </form>
+        <p style="color: #475569; text-align: center;">Select course, date, and lecture number to mark attendance</p>
+    </div>
+
+    <script>
+        // Set date constraints for attendance date picker
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('attendance-date');
+            if (dateInput) {
+                // Get today's date
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+                
+                // Set max date to today (cannot select future dates)
+                dateInput.setAttribute('max', todayStr);
+                
+                // Set default value to today
+                if (!dateInput.value) {
+                    dateInput.value = todayStr;
+                }
+                
+                // Add validation to prevent Sundays
+                dateInput.addEventListener('change', function() {
+                    const selectedDate = new Date(this.value + 'T00:00:00');
+                    const dayOfWeek = selectedDate.getDay();
+                    
+                    // Check if Sunday (0 = Sunday)
+                    if (dayOfWeek === 0) {
+                        alert('Cannot select Sunday for attendance. Please choose a weekday.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Check if future date
+                    const selected = new Date(this.value);
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    selected.setHours(0, 0, 0, 0);
+                    
+                    if (selected > now) {
+                        alert('Cannot select future dates for attendance. Please select today or a previous date.');
+                        this.value = todayStr;
+                        return;
+                    }
+                });
+                
+                // Disable Sundays in the date picker (visual indication)
+                dateInput.addEventListener('input', function() {
+                    const selectedDate = new Date(this.value + 'T00:00:00');
+                    const dayOfWeek = selectedDate.getDay();
+                    
+                    if (dayOfWeek === 0) {
+                        this.setCustomValidity('Sundays are not allowed');
+                    } else {
+                        this.setCustomValidity('');
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Analytics Tab -->
+    <div id="analytics-tab" class="tab-content {% if active_tab == 'analytics' %}active{% endif %}">
+        <h3>Student Analytics</h3>
+        {% if analytics_data %}
+        {% for data in analytics_data %}
+        <div style="margin-bottom: 30px; border: 1px solid #E2E8F0; padding: 20px; border-radius: 12px; background: #F8FAFC;">
+            <h4 style="margin-top: 0; color: #1E3A8A;">{{ data.course.code }} - {{ data.course.name }}</h4>
+            <p style="color: #475569;">Total Classes Held: <strong>{{ data.total_classes }}</strong></p>
+
+            {% if data.student_stats %}
+            <table style="margin-top: 15px;">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Attendance %</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in data.student_stats %}
+                    <tr>
+                        <td>{{ stat.student.user.name }} ({{ stat.student.enrollment_number }})</td>
+                        <td>
+                            <div style="background-color: #E2E8F0; border-radius: 10px; height: 10px; width: 100%; margin-bottom: 5px;">
+                                {% if stat.attendance_percent >= 75 %}
+                                <div style="background: linear-gradient(90deg, #10B981, #059669); height: 100%; border-radius: 10px; width: {{ stat.attendance_percent }}%;"></div>
+                                {% elif stat.attendance_percent >= 60 %}
+                                <div style="background: linear-gradient(90deg, #F59E0B, #D97706); height: 100%; border-radius: 10px; width: {{ stat.attendance_percent }}%;"></div>
+                                {% else %}
+                                <div style="background: linear-gradient(90deg, #EF4444, #DC2626); height: 100%; border-radius: 10px; width: {{ stat.attendance_percent }}%;"></div>
+                                {% endif %}
+                            </div>
+                            <span>{{ stat.attendance_percent|floatformat:1 }}%</span>
+                        </td>
+                        <td>
+                            {% if stat.attendance_percent < 75 %}
+                            <span class="status-badge status-absent">Low Attendance</span>
+                            {% else %}
+                            <span class="status-badge status-present">Good</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color: #94A3B8;">No student data available.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <p style="text-align: center; color: #94A3B8; padding: 40px;">No analytics data available.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
+}
+</script>
+
+{% endblock %}

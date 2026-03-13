@@ -10,15 +10,25 @@ def admin_dashboard(request):
     # Calculate fee analytics
     all_fees = FeeRecord.objects.all()
     total_collected = sum(f.amount_paid for f in all_fees)
-    total_pending = sum(f.amount_due for f in all_fees if f.status != 'Paid')
+    total_pending = sum(f.amount_due - f.amount_paid for f in all_fees if f.status != 'Paid')
+    total_dues = sum(f.amount_due - f.amount_paid for f in all_fees if f.status != 'Paid')
+    
+    # Get all students, faculty, and fees for tabs
+    students = StudentProfile.objects.all().select_related('user')[:50]  # Limit for performance
+    faculty = FacultyProfile.objects.all().select_related('user', 'department').order_by('department__name')
+    fees = FeeRecord.objects.all().select_related('student__user').order_by('-due_date')[:50]
     
     context = {
         'total_students': total_students,
         'total_faculty': total_faculty,
         'total_collected': total_collected,
         'total_pending': total_pending,
+        'total_dues': total_dues,
+        'students': students,
+        'faculty': faculty,
+        'fees': fees,
     }
-    return render(request, "dashboards/admin/overview.html", context)
+    return render(request, "dashboards/admin/overview_new.html", context)
 
 
 def manage_students(request):

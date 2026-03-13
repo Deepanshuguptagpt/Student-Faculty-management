@@ -32,6 +32,7 @@
             <label for="date_filter" style="display: block; margin-bottom: 5px;">Date:</label>
             <input type="date" name="date" id="date_filter" value="{{ selected_date|default:'' }}" required
                 style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+            <small style="color: #64748b; font-size: 12px; display: block; margin-top: 4px;">Only current and previous dates (excluding Sundays)</small>
         </div>
 
         <div style="margin-bottom: 15px;">
@@ -51,6 +52,63 @@
             Students</button>
     </form>
 </div>
+
+<script>
+    // Set date constraints for attendance date picker
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('date_filter');
+        if (dateInput) {
+            // Get today's date
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            // Set max date to today (cannot select future dates)
+            dateInput.setAttribute('max', todayStr);
+            
+            // Set default value to today if empty
+            if (!dateInput.value) {
+                dateInput.value = todayStr;
+            }
+            
+            // Add validation to prevent Sundays
+            dateInput.addEventListener('change', function() {
+                const selectedDate = new Date(this.value + 'T00:00:00');
+                const dayOfWeek = selectedDate.getDay();
+                
+                // Check if Sunday (0 = Sunday)
+                if (dayOfWeek === 0) {
+                    alert('Cannot select Sunday for attendance. Please choose a weekday.');
+                    this.value = '';
+                    return;
+                }
+                
+                // Check if future date
+                const selected = new Date(this.value);
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                selected.setHours(0, 0, 0, 0);
+                
+                if (selected > now) {
+                    alert('Cannot select future dates for attendance. Please select today or a previous date.');
+                    this.value = todayStr;
+                    return;
+                }
+            });
+            
+            // Disable Sundays in the date picker (visual indication)
+            dateInput.addEventListener('input', function() {
+                const selectedDate = new Date(this.value + 'T00:00:00');
+                const dayOfWeek = selectedDate.getDay();
+                
+                if (dayOfWeek === 0) {
+                    this.setCustomValidity('Sundays are not allowed');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+        }
+    });
+</script>
 
 {% if selected_course_id %}
 <div class="card">

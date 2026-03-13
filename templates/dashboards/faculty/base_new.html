@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Portal - {% block title %}Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            background: #F8FAFC;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            background: #FFFFFF;
+            padding: 20px 40px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .logo-section h1 {
+            font-size: 24px;
+            background: linear-gradient(135deg, #1E3A8A, #4F46E5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1E3A8A, #4F46E5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .user-details h3 {
+            font-size: 15px;
+            color: #0F172A;
+            font-weight: 600;
+        }
+
+        .user-details p {
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Main Content Container */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+            border: 1px solid #E2E8F0;
+            transition: all 0.25s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h3 {
+            font-size: 20px;
+            color: #1E3A8A;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th {
+            background: #F8FAFC;
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #E2E8F0;
+        }
+
+        table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #E2E8F0;
+            color: #0F172A;
+            font-size: 14px;
+        }
+
+        table tr:hover {
+            background: #F8FAFC;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-present {
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            color: #065F46;
+        }
+
+        .status-absent {
+            background: linear-gradient(135deg, #FEE2E2, #FECACA);
+            color: #991B1B;
+        }
+
+        .status-late {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            color: #92400E;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #E2E8F0;
+            padding-bottom: 0;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #475569;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn:hover {
+            color: #1E3A8A;
+        }
+
+        .tab-btn.active {
+            color: #1E3A8A;
+            border-bottom-color: #1E3A8A;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            transition: all 0.25s ease;
+            border-left: 4px solid;
+            border: 1px solid #E2E8F0;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card:nth-child(1) { border-left-color: #4F46E5; }
+        .stat-card:nth-child(2) { border-left-color: #10B981; }
+        .stat-card:nth-child(3) { border-left-color: #F59E0B; }
+
+        .stat-label {
+            font-size: 14px;
+            color: #475569;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 8px;
+        }
+
+        .stat-subtext {
+            font-size: 13px;
+            color: #94A3B8;
+        }
+
+        /* Button Styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #1E3A8A, #4F46E5);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <div class="top-nav">
+        <div class="logo-section">
+            <h1>Faculty Portal</h1>
+        </div>
+        <div class="user-section">
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ profile.user.name|first|upper }}
+                </div>
+                <div class="user-details">
+                    <h3>{{ profile.user.name|default:"Faculty" }}</h3>
+                    <p>{{ profile.designation|default:"Faculty Member" }}</p>
+                </div>
+            </div>
+            <a href="/auth/" class="btn-logout">Logout</a>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Container -->
+    <div class="dashboard-container">
+        
+        {% if error %}
+        <div style="background: linear-gradient(135deg, #FEE2E2, #FECACA); color: #991B1B; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #DC2626;">
+            <strong>Notice:</strong> {{ error }}
+        </div>
+        {% endif %}
+
+        {% block content %}
+        <!-- Page Specific Content Will Load Here -->
+        {% endblock %}
+    </div>
+
+</body>
+</html>

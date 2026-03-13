@@ -1,0 +1,174 @@
+{% extends 'dashboards/admin/base_new.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value">{{ total_students|default:"0" }}</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">Total Faculty</div>
+        <div class="stat-value">{{ total_faculty|default:"0" }}</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">Revenue Collected</div>
+        <div class="stat-value">₹{{ total_collected|default:"0" }}</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">Pending Dues</div>
+        <div class="stat-value">₹{{ total_pending|default:"0" }}</div>
+    </div>
+</div>
+
+<!-- Tabbed Content -->
+<div class="card">
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('students')">Students</button>
+        <button class="tab-btn" onclick="switchTab('faculty')">Faculty</button>
+        <button class="tab-btn" onclick="switchTab('fees')">Fee Management</button>
+    </div>
+
+    <!-- Students Tab -->
+    <div id="students-tab" class="tab-content active">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">Registered Students</h3>
+            <a href="{% url 'add_student' %}" class="btn-primary">+ Add Student</a>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Enrollment No</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Branch</th>
+                    <th>Year & Sem</th>
+                    <th>Batch</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td><strong>{{ student.enrollment_number }}</strong></td>
+                    <td>{{ student.user.name }}</td>
+                    <td>{{ student.user.email }}</td>
+                    <td>{{ student.branch }}</td>
+                    <td>{{ student.current_year }}, {{ student.current_semester }}</td>
+                    <td>{{ student.batch_year }}</td>
+                    <td>
+                        <a href="{% url 'edit_student' student.id %}" style="color: #F59E0B; text-decoration: none; margin-right: 10px;">Edit</a>
+                        <a href="{% url 'delete_student' student.id %}" style="color: #EF4444; text-decoration: none;" onclick="return confirm('Delete this student?');">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align: center; color: #94A3B8; padding: 40px;">No students registered</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Faculty Tab -->
+    <div id="faculty-tab" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">Registered Faculty</h3>
+            <a href="{% url 'add_faculty' %}" class="btn-primary">+ Add Faculty</a>
+        </div>
+
+        {% regroup faculty by department as department_list %}
+        {% for dept in department_list %}
+        <h4 style="margin-top: 20px; color: #0F172A; border-bottom: 2px solid #E2E8F0; padding-bottom: 10px;">{{ dept.grouper.name|default:"Unassigned" }}</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Faculty ID</th>
+                    <th>Name</th>
+                    <th>Designation</th>
+                    <th>Contact</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for staff in dept.list %}
+                <tr>
+                    <td><strong>{{ staff.user.id }}</strong></td>
+                    <td>{{ staff.user.name }}</td>
+                    <td>{{ staff.designation }}</td>
+                    <td>{{ staff.contact_number|default:"-" }}</td>
+                    <td>
+                        <a href="{% url 'edit_faculty' staff.id %}" style="color: #F59E0B; text-decoration: none; margin-right: 10px;">Edit</a>
+                        <a href="{% url 'delete_faculty' staff.id %}" style="color: #EF4444; text-decoration: none;" onclick="return confirm('Delete this faculty?');">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% empty %}
+        <p style="text-align: center; color: #94A3B8; padding: 40px;">No faculty members registered</p>
+        {% endfor %}
+    </div>
+
+    <!-- Fees Tab -->
+    <div id="fees-tab" class="tab-content">
+        <h3>Fee Management</h3>
+        <div style="background: #FEE2E2; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #EF4444;">
+            <div style="color: #475569; font-size: 14px; font-weight: 600;">Total Outstanding Dues</div>
+            <div style="font-size: 36px; font-weight: 700; color: #EF4444; margin-top: 8px;">₹{{ total_dues|default:"0" }}</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Enrollment No</th>
+                    <th>Semester</th>
+                    <th>Billed</th>
+                    <th>Paid</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fee in fees %}
+                <tr>
+                    <td>{{ fee.student.user.name }}</td>
+                    <td>{{ fee.student.enrollment_number }}</td>
+                    <td>{{ fee.semester }}</td>
+                    <td>₹{{ fee.amount_due }}</td>
+                    <td>₹{{ fee.amount_paid }}</td>
+                    <td>
+                        <span class="status-badge {% if fee.status == 'Paid' %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
+                            {{ fee.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align: center; color: #94A3B8; padding: 40px;">No fee records found</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    document.getElementById(tabName + '-tab').classList.add('active');
+    event.target.classList.add('active');
+}
+</script>
+
+{% endblock %}

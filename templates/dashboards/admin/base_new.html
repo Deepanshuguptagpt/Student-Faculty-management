@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - {% block title %}Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F8FAFC;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            background: #FFFFFF;
+            padding: 20px 40px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .logo-section h1 {
+            font-size: 24px;
+            background: linear-gradient(135deg, #0078D4, #106EBE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .card h3 {
+            font-size: 20px;
+            color: #0078D4;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th {
+            background: #F8FAFC;
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            border-bottom: 2px solid #E2E8F0;
+        }
+
+        table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #E2E8F0;
+            color: #0F172A;
+        }
+
+        table tr:hover {
+            background: #F8FAFC;
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #E2E8F0;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #475569;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn.active {
+            color: #0078D4;
+            border-bottom-color: #0078D4;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid;
+            border: 1px solid #E2E8F0;
+        }
+
+        .stat-card:nth-child(1) { border-left-color: #4F46E5; }
+        .stat-card:nth-child(2) { border-left-color: #10B981; }
+        .stat-card:nth-child(3) { border-left-color: #F59E0B; }
+        .stat-card:nth-child(4) { border-left-color: #EF4444; }
+
+        .stat-label {
+            font-size: 14px;
+            color: #475569;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #0F172A;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-paid {
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            color: #065F46;
+        }
+
+        .status-pending {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            color: #92400E;
+        }
+
+        .status-overdue {
+            background: linear-gradient(135deg, #FEE2E2, #FECACA);
+            color: #991B1B;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0078D4, #106EBE);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-nav">
+        <div class="logo-section">
+            <h1>Admin Portal</h1>
+        </div>
+        <a href="/auth/" class="btn-logout">Logout</a>
+    </div>
+
+    <div class="dashboard-container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+</body>
+</html>
