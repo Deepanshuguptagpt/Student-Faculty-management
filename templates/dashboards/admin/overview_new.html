@@ -30,16 +30,54 @@
 <!-- Tabbed Content -->
 <div class="card">
     <div class="tab-nav">
-        <button class="tab-btn active" onclick="switchTab('students')">Students</button>
-        <button class="tab-btn" onclick="switchTab('faculty')">Faculty</button>
-        <button class="tab-btn" onclick="switchTab('fees')">Fee Management</button>
+        <button class="tab-btn {% if active_tab == 'students' or not active_tab %}active{% endif %}" onclick="switchTab('students')">Students</button>
+        <button class="tab-btn {% if active_tab == 'faculty' %}active{% endif %}" onclick="switchTab('faculty')">Faculty</button>
+        <button class="tab-btn {% if active_tab == 'fees' %}active{% endif %}" onclick="switchTab('fees')">Fee Management</button>
     </div>
 
     <!-- Students Tab -->
-    <div id="students-tab" class="tab-content active">
+    <div id="students-tab" class="tab-content {% if active_tab == 'students' or not active_tab %}active{% endif %}">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h3 style="margin: 0;">Registered Students</h3>
             <a href="{% url 'add_student' %}" class="btn-primary">+ Add Student</a>
+        </div>
+
+        <!-- Filter Section -->
+        <div style="background: #F8FAFC; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #E2E8F0;">
+            <form method="GET" action="/admin-panel/dashboard/" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <input type="hidden" name="tab" value="students">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Branch</label>
+                    <select name="branch" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <option value="">-- All Branches --</option>
+                        {% for b in branches %}
+                        <option value="{{ b }}" {% if selected_branch == b %}selected{% endif %}>{{ b }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Year</label>
+                    <select name="year" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <option value="">-- All Years --</option>
+                        {% for y in years %}
+                        <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Course</label>
+                    <select name="course" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <option value="">-- All Courses --</option>
+                        {% for c in courses %}
+                        <option value="{{ c }}" {% if selected_course == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="btn-primary">Apply Filters</button>
+                    <a href="/admin-panel/dashboard/?tab=students" class="btn-primary" style="background: #94A3B8; margin-left: 10px; text-decoration: none;">Clear</a>
+                </div>
+            </form>
         </div>
 
         <table>
@@ -69,14 +107,14 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" style="text-align: center; color: #94A3B8; padding: 40px;">No students registered</td></tr>
+                <tr><td colspan="7" style="text-align: center; color: #94A3B8; padding: 40px;">No students found</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
     <!-- Faculty Tab -->
-    <div id="faculty-tab" class="tab-content">
+    <div id="faculty-tab" class="tab-content {% if active_tab == 'faculty' %}active{% endif %}">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h3 style="margin: 0;">Registered Faculty</h3>
             <a href="{% url 'add_faculty' %}" class="btn-primary">+ Add Faculty</a>
@@ -116,7 +154,7 @@
     </div>
 
     <!-- Fees Tab -->
-    <div id="fees-tab" class="tab-content">
+    <div id="fees-tab" class="tab-content {% if active_tab == 'fees' %}active{% endif %}">
         <h3>Fee Management</h3>
         <div style="background: #FEE2E2; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #EF4444;">
             <div style="color: #475569; font-size: 14px; font-weight: 600;">Total Outstanding Dues</div>

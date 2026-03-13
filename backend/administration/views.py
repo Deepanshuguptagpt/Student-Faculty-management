@@ -13,10 +13,41 @@ def admin_dashboard(request):
     total_pending = sum(f.amount_due - f.amount_paid for f in all_fees if f.status != 'Paid')
     total_dues = sum(f.amount_due - f.amount_paid for f in all_fees if f.status != 'Paid')
     
-    # Get all students, faculty, and fees for tabs
-    students = StudentProfile.objects.all().select_related('user')[:50]  # Limit for performance
+    # Get all students with filters
+    students = StudentProfile.objects.all().select_related('user')
+    
+    # Apply filters
+    branch_filter = request.GET.get('branch')
+    year_filter = request.GET.get('year')
+    course_filter = request.GET.get('course')
+    active_tab = request.GET.get('tab', 'students')
+    
+    if branch_filter:
+        students = students.filter(branch=branch_filter)
+    if year_filter:
+        # Filter by current year (1st, 2nd, 3rd, 4th)
+        from datetime import date
+        current_year = date.today().year
+        current_month = date.today().month
+        year_num = int(year_filter.split()[0][0])  # Extract number from "1st year", "2nd year", etc.
+        
+        # Calculate batch years that correspond to this year level
+        if current_month >= 7:
+            # After July, new academic year has started
+            target_batch = current_year - (year_num - 1)
+        else:
+            # Before July, still in previous academic year
+            target_batch = current_year - year_num
+        
+        students = students.filter(batch_year=target_batch)
+    if course_filter:
+        students = students.filter(course_name=course_filter)
+    
+    # Get faculty and fees for tabs
     faculty = FacultyProfile.objects.all().select_related('user', 'department').order_by('department__name')
     fees = FeeRecord.objects.all().select_related('student__user').order_by('-due_date')[:50]
+    
+    year_choices = ['1st year', '2nd year', '3rd year', '4th year']
     
     context = {
         'total_students': total_students,
@@ -27,6 +58,13 @@ def admin_dashboard(request):
         'students': students,
         'faculty': faculty,
         'fees': fees,
+        'branches': [b[0] for b in BRANCH_CHOICES],
+        'years': year_choices,
+        'courses': [c[0] for c in COURSE_CHOICES],
+        'selected_branch': branch_filter,
+        'selected_year': year_filter,
+        'selected_course': course_filter,
+        'active_tab': active_tab
     }
     return render(request, "dashboards/admin/overview_new.html", context)
 
