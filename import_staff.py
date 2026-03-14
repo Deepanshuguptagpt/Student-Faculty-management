@@ -1,4 +1,10 @@
 import json
+import os
+import django
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+django.setup()
+
 from authentication.models import User
 from backend.faculty.models import FacultyProfile, Department, FacultyCourseAssignment
 from backend.student.models import Course

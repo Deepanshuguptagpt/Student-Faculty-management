@@ -190,9 +190,9 @@ def main():
                 
             if l_type in ["Main", "Extra"]:
                 course = course_map[l_val]
-                # Present 85% of time, Absent 10%, Late 5%
+                # Present 90% of time, Absent 10%
                 for s in aiml_students:
-                    status = random.choices(['Present', 'Absent', 'Late'], weights=[85, 10, 5])[0]
+                    status = random.choices(['Present', 'Absent'], weights=[90, 10])[0]
                     attendance_records.append(Attendance(
                         student=s, course=course, date=current_date, lecture_number=lect_num, status=status
                     ))
@@ -204,7 +204,7 @@ def main():
                 if course_b1_title:
                     course_b1 = course_map[course_b1_title]
                     for s in students_b1:
-                        status = random.choices(['Present', 'Absent', 'Late'], weights=[85, 10, 5])[0]
+                        status = random.choices(['Present', 'Absent'], weights=[90, 10])[0]
                         attendance_records.append(Attendance(
                             student=s, course=course_b1, date=current_date, lecture_number=lect_num, status=status
                         ))
@@ -212,7 +212,7 @@ def main():
                 if course_b2_title:
                     course_b2 = course_map[course_b2_title]
                     for s in students_b2:
-                        status = random.choices(['Present', 'Absent', 'Late'], weights=[85, 10, 5])[0]
+                        status = random.choices(['Present', 'Absent'], weights=[90, 10])[0]
                         attendance_records.append(Attendance(
                             student=s, course=course_b2, date=current_date, lecture_number=lect_num, status=status
                         ))

@@ -85,11 +85,13 @@ def import_students(excel_file_path):
             user.save()
             
             # Create StudentProfile
-            profile, p_created = StudentProfile.objects.get_or_create(
+            profile, p_created = StudentProfile.objects.update_or_create(
                 user=user,
                 defaults={
                     'enrollment_number': enr,
-                    'batch_year': 2023, # Defaulting to 2023 
+                    'batch_year': 2023, 
+                    'branch': 'Artificial Intelligence and machine Learning',
+                    'course_name': 'Artificial Intelligence and machine Learning'
                 }
             )
             
