@@ -73,7 +73,7 @@ def import_from_file(file_path, branch, section, enrollment_patterns, name_patte
                 defaults={
                     'name': name,
                     'role': 'student',
-                    'password': 'ADMIN'
+                    'password': 'password123'
                 }
             )
             
