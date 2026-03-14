@@ -14,6 +14,6 @@ def generate_tree(start_path, prefix=""):
 
 
 if __name__ == "__main__":
-    root_directory = "PS C:\Users\gupta\Student Faculty management>"   # change this to your project path if needed
+    root_directory = r"C:\Users\gupta\Student Faculty management"   # change this to your project path if needed
     print(root_directory)
     generate_tree(root_directory)
