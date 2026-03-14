@@ -152,9 +152,6 @@
                             <button type="button"
                                 class="btn-toggle absent {% if item.status  ==  'Absent'  %}active{% endif %}"
                                 onclick="setStatus('{{ item.student.id }}', 'Absent', this)">Absent</button>
-                            <button type="button"
-                                class="btn-toggle late {% if item.status  ==  'Late'  %}active{% endif %}"
-                                onclick="setStatus('{{ item.student.id }}', 'Late', this)">Late</button>
                         </div>
                     </td>
                 </tr>
@@ -196,12 +193,6 @@
         background-color: #e74c3c;
         color: white;
         border-color: #e74c3c;
-    }
-
-    .btn-toggle.active.late {
-        background-color: #f1c40f;
-        color: white;
-        border-color: #f1c40f;
     }
 </style>
 <script>

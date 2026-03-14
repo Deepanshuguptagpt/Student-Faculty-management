@@ -1,51 +1,180 @@
-{% extends 'dashboards/student/base.html' %}
+{% extends 'dashboards/student/base_new.html' %}
 
-{% block title %}Attendance{% endblock %}
+{% block title %}My Attendance{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="margin: 0; border: none; padding: 0;">Complete Attendance History</h3>
-        <form method="GET" style="display: flex; gap: 10px;">
-            <select name="course_id" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-                <option value="">-- All Courses --</option>
-                {% for c in courses %}
-                <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>{{ c.code }} - {{ c.name
-                    }}</option>
-                {% endfor %}
-            </select>
-            <button type="submit"
-                style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Filter</button>
+<div class="attendance-container">
+    <!-- Global Attendance Summary -->
+    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+        <div class="stat-card theory">
+            <div class="stat-value">{{ global_theory_pct }}%</div>
+            <div class="stat-label">Theory Attendance</div>
+            <div class="stat-progress-bar"><div class="progress" style="width: {{ global_theory_pct }}%"></div></div>
+        </div>
+        <div class="stat-card practical">
+            <div class="stat-value">{{ global_practical_pct }}%</div>
+            <div class="stat-label">Practical Attendance</div>
+            <div class="stat-progress-bar"><div class="progress" style="width: {{ global_practical_pct }}%"></div></div>
+        </div>
+        <div class="stat-card overall">
+            <div class="stat-value">{{ global_overall_pct }}%</div>
+            <div class="stat-label">Overall Attendance</div>
+            <div class="stat-progress-bar"><div class="progress" style="width: {{ global_overall_pct }}%"></div></div>
+        </div>
+    </div>
+
+    <!-- Attendance Filter -->
+    <div class="card filter-card" style="margin-bottom: 30px; padding: 20px;">
+        <h4 style="margin-top: 0; margin-bottom: 15px; color: #34495e;">Filter Attendance</h4>
+        <form method="GET" style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+            <div>
+                <label style="display: block; font-size: 13px; color: #64748b; margin-bottom: 5px;">Start Date</label>
+                <input type="date" name="start_date" value="{{ start_date }}" style="padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; width: 200px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 13px; color: #64748b; margin-bottom: 5px;">End Date</label>
+                <input type="date" name="end_date" value="{{ end_date }}" style="padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; width: 200px;">
+            </div>
+            <button type="submit" class="btn-filter" style="background: #3498db; color: white; padding: 10px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: background 0.3s;">
+                Apply Filter
+            </button>
+            <a href="?" style="text-decoration: none; color: #64748b; margin-bottom: 10px; font-size: 14px;">Clear All</a>
         </form>
     </div>
-    <table>
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Course Code</th>
-                <th>Course Name</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for att in records %}
-            <tr>
-                <td>{{ att.date|date:"F d, Y" }}</td>
-                <td><strong>{{ att.course.code }}</strong></td>
-                <td>{{ att.course.name }}</td>
-                <td>
-                    <span
-                        class="status-badge {% if att.status  ==  'Present'  %}status-present{% elif att.status == 'Late' %}status-late{% else %}status-absent{% endif %}">
-                        {{ att.status }}
-                    </span>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="4">No attendance records found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+    <!-- Course-wise Attendance Sections -->
+    <div class="course-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 25px;">
+        {% for course in course_data %}
+        <div class="card course-card">
+            <div class="course-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                <div>
+                    <h3 style="margin: 0; color: #2c3e50; font-size: 1.2rem;">{{ course.name }}</h3>
+                    <div style="font-size: 14px; color: #64748b; margin-top: 4px;">{{ course.base_code }} | {{ course.faculty }}</div>
+                </div>
+                <div class="course-pct" style="font-size: 1.5rem; font-weight: 700; color: {% if course.percentage >= 75 %}#27ae60{% else %}#e74c3c{% endif %};">
+                    {{ course.percentage|stringformat:".1f" }}%
+                </div>
+            </div>
+
+            <div class="attendance-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                <div>
+                    <div style="font-size: 18px; font-weight: 700; color: #34495e;">{{ course.total_all }}</div>
+                    <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px;">Total</div>
+                </div>
+                <div>
+                    <div style="font-size: 18px; font-weight: 700; color: #27ae60;">{{ course.present_all }}</div>
+                    <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px;">Present</div>
+                </div>
+                <div>
+                    <div style="font-size: 18px; font-weight: 700; color: #e74c3c;">{{ course.theory.absent|add:course.practical.absent }}</div>
+                    <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px;">Absent</div>
+                </div>
+            </div>
+
+            <div class="sub-split" style="display: flex; gap: 15px; margin-bottom: 20px;">
+                <div style="flex: 1; font-size: 13px; color: #64748b; border-right: 1px solid #e2e8f0; padding-right: 10px;">
+                    <span style="font-weight: 600; color: #34495e;">Theory:</span> {{ course.theory.present }}/{{ course.theory.total }}
+                </div>
+                <div style="flex: 1; font-size: 13px; color: #64748b;">
+                    <span style="font-weight: 600; color: #34495e;">Practical:</span> {{ course.practical.present }}/{{ course.practical.total }}
+                </div>
+            </div>
+
+            <button onclick="toggleDetails('{{ course.base_code }}')" class="btn-details" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; color: #3498db; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                See All History
+            </button>
+
+            <!-- Detailed History (Collapsible) -->
+            <div id="details-{{ course.base_code }}" style="display: none; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                <table style="width: 100%; font-size: 13px;">
+                    <thead>
+                        <tr style="text-align: left; color: #94a3b8;">
+                            <th style="padding: 10px 0;">Date</th>
+                            <th>Type</th>
+                            <th>Lec</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in course.all_records %}
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 10px 0;">{{ att.date|date:"d M Y" }}</td>
+                            <td>
+                                {% if '[P]' in att.course.code %}
+                                <span style="color: #9b59b6; font-size: 11px; background: #f5eef8; padding: 2px 6px; border-radius: 4px;">LAB</span>
+                                {% else %}
+                                <span style="color: #3498db; font-size: 11px; background: #ebf5fb; padding: 2px 6px; border-radius: 4px;">THEORY</span>
+                                {% endif %}
+                            </td>
+                            <td>L{{ att.lecture_number }}</td>
+                            <td>
+                                <span style="color: {% if att.status == 'Present' %}#27ae60{% else %}#e74c3c{% endif %}; font-weight: 600;">
+                                    {{ att.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
-{% endblock %}
+
+<style>
+    .stat-card {
+        padding: 25px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid #f1f5f9;
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-value { font-size: 2.2rem; font-weight: 800; margin-bottom: 5px; color: #2c3e50; }
+    .stat-label { font-size: 14px; color: #64748b; font-weight: 500; }
+    .stat-progress-bar { 
+        height: 6px; background: #f1f5f9; border-radius: 10px; margin-top: 15px; width: 100%; 
+    }
+    .progress { height: 100%; border-radius: 10px; transition: width 0.8s ease-in-out; }
+    
+    .theory .progress { background: #3498db; }
+    .practical .progress { background: #9b59b6; }
+    .overall .progress { background: #27ae60; }
+    
+    .course-card {
+        padding: 25px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid #f1f5f9;
+    }
+    .course-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important;
+    }
+    
+    .btn-details:hover {
+        background: #f8fafc;
+        border-color: #3498db;
+    }
+    
+    .btn-filter:hover { background: #2980b9; }
+</style>
+
+<script>
+    function toggleDetails(baseCode) {
+        const details = document.getElementById('details-' + baseCode);
+        const button = event.target;
+        
+        if (details.style.display === 'none') {
+            details.style.display = 'block';
+            button.innerText = 'Hide History';
+            button.style.color = '#e74c3c';
+        } else {
+            details.style.display = 'none';
+            button.innerText = 'See All History';
+            button.style.color = '#3498db';
+        }
+    }
+</script>
+{% endblock %}
