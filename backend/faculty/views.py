@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import FacultyProfile, FacultyCourseAssignment, Department
-from backend.student.models import Attendance, Course, Enrollment, StudentProfile
+from backend.student.models import Attendance, Course, Enrollment, StudentProfile, AttendanceMonitoringLog, BRANCH_CHOICES
+import subprocess
 
 def get_faculty_profile(request):
     faculty_email = request.session.get('faculty_email')
@@ -48,6 +49,16 @@ def faculty_dashboard(request):
         
         # Get workload data
         workload_data = []
+        # (Assuming workload_data logic exists below or I should add it if it's not and it's needed for the template)
+        
+        # AI Monitoring Logic
+        latest_monitoring = AttendanceMonitoringLog.objects.order_by('-date_performed').first()
+        
+        if request.method == 'POST' and request.POST.get('action') == 'run_ai_agent':
+            subprocess.Popen(['python', 'manage.py', 'attendance_agent', '--force'])
+            return redirect('/faculty/dashboard/?tab=ai_monitoring&triggered=1')
+
+        # Get existing context data (I'll need to see more lines to ensure I don't break existing logic)
         for assignment in assignments:
             student_count = Enrollment.objects.filter(course=assignment.course).count()
             workload_data.append({
@@ -122,7 +133,8 @@ def faculty_dashboard(request):
             'selected_branch': branch_filter,
             'selected_year': year_filter,
             'selected_course': course_filter,
-            'active_tab': active_tab
+            'active_tab': active_tab,
+            'latest_monitoring': latest_monitoring,
         }
         return render(request, "dashboards/faculty/overview_new.html", context)
     except Exception as e:

@@ -1,8 +1,7 @@
 from django.shortcuts import render, redirect
 from authentication.models import User
-from backend.student.models import StudentProfile, FeeRecord, BRANCH_CHOICES, COURSE_CHOICES, SEMESTER_CHOICES, AttendanceMonitoringLog
+from backend.student.models import StudentProfile, FeeRecord, BRANCH_CHOICES, COURSE_CHOICES, SEMESTER_CHOICES
 from backend.faculty.models import FacultyProfile
-import subprocess
 
 def admin_dashboard(request):
     total_students = StudentProfile.objects.count()
@@ -56,14 +55,6 @@ def admin_dashboard(request):
     # Get unique sections from students (excluding None/empty)
     sections = StudentProfile.objects.exclude(section__isnull=True).exclude(section='').values_list('section', flat=True).distinct().order_by('section')
     
-    # AI Monitoring Data
-    latest_monitoring = AttendanceMonitoringLog.objects.order_by('-date_performed').first()
-    
-    if request.method == 'POST' and request.POST.get('action') == 'run_ai_agent':
-        # Run the agent command in background
-        subprocess.Popen(['python', 'manage.py', 'attendance_agent', '--force'])
-        return redirect('/admin-panel/dashboard/?tab=ai_monitoring&triggered=1')
-
     context = {
         'total_students': total_students,
         'total_faculty': total_faculty,
@@ -81,8 +72,7 @@ def admin_dashboard(request):
         'selected_year': year_filter,
         'selected_course': course_filter,
         'selected_section': section_filter,
-        'active_tab': active_tab,
-        'latest_monitoring': latest_monitoring,
+        'active_tab': active_tab
     }
     return render(request, "dashboards/admin/overview_new.html", context)
 
