@@ -60,14 +60,15 @@ def faculty_dashboard(request):
         analytics_data = []
         for assignment in assignments:
             course = assignment.course
-            total_classes = Attendance.objects.filter(course=course).values('date', 'lecture_number').distinct().count()
             enrollments = Enrollment.objects.filter(course=course)
             
             student_stats = []
             for en in enrollments:
                 student = en.student
+                # Count records specifically for this student and course
+                student_total_classes = Attendance.objects.filter(student=student, course=course).count()
                 present = Attendance.objects.filter(student=student, course=course, status='Present').count()
-                attendance_percent = (present / total_classes * 100) if total_classes > 0 else 0
+                attendance_percent = (present / student_total_classes * 100) if student_total_classes > 0 else 0
                 student_stats.append({
                     'student': student,
                     'attendance_percent': attendance_percent
@@ -75,7 +76,7 @@ def faculty_dashboard(request):
                 
             analytics_data.append({
                 'course': course,
-                'total_classes': total_classes,
+                'total_classes': Attendance.objects.filter(course=course).values('date', 'lecture_number').distinct().count(),
                 'student_stats': student_stats
             })
         
@@ -260,14 +261,15 @@ def faculty_analytics(request):
     analytics_data = []
     for assignment in assignments:
         course = assignment.course
-        total_classes = Attendance.objects.filter(course=course).values('date', 'lecture_number').distinct().count()
         enrollments = Enrollment.objects.filter(course=course)
         
         student_stats = []
         for en in enrollments:
             student = en.student
+            # Count records specifically for this student and course
+            student_total_classes = Attendance.objects.filter(student=student, course=course).count()
             present = Attendance.objects.filter(student=student, course=course, status='Present').count()
-            attendance_percent = (present / total_classes * 100) if total_classes > 0 else 0
+            attendance_percent = (present / student_total_classes * 100) if student_total_classes > 0 else 0
             student_stats.append({
                 'student': student,
                 'attendance_percent': attendance_percent
@@ -275,7 +277,7 @@ def faculty_analytics(request):
             
         analytics_data.append({
             'course': course,
-            'total_classes': total_classes,
+            'total_classes': Attendance.objects.filter(course=course).values('date', 'lecture_number').distinct().count(),
             'student_stats': student_stats
         })
         

@@ -1,8 +1,8 @@
 import requests
 import json
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "llama3:latest" # Updated to match user's installed model
+OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
+MODEL_NAME = "tinyllama:latest" # Using a lighter model to fit in available system memory
 
 def generate_ollama_insight(prompt):
     """
