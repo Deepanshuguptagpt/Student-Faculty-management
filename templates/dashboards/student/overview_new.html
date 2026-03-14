@@ -10,6 +10,16 @@
     <p>Here's what's happening with your academics today</p>
 </div>
 
+{% if profile.attendance_risk %}
+<div style="background: #FEE2E2; border-left: 5px solid #EF4444; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; align-items: center; gap: 20px;">
+    <div style="font-size: 32px;">⚠️</div>
+    <div>
+        <h4 style="color: #991B1B; margin-bottom: 5px;">Attendance Risk Alert</h4>
+        <p style="color: #B91C1C; margin: 0; font-size: 14px;">Your attendance has fallen below the 75% threshold. Please improve your attendance to avoid academic penalties. An automated report has been sent to the class coordinator.</p>
+    </div>
+</div>
+{% endif %}
+
 <!-- Quick Stats Grid -->
 <div class="stats-grid">
     <!-- Attendance Card -->
@@ -18,7 +28,7 @@
         <div class="stat-value">{{ attendance_percentage|default:"0" }}%</div>
         <div class="stat-subtext">Keep it up!</div>
         <div class="progress-bar">
-            <div class="progress-fill" style="width: {{ attendance_percentage|default:"0" }}%;"></div>
+            <div class="progress-fill" style="width: {{ attendance_percentage|default:'0' }}%;"></div>
         </div>
     </div>
 

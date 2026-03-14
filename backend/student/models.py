@@ -37,6 +37,7 @@ class StudentProfile(models.Model):
     address = models.TextField(null=True, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
     section = models.CharField(max_length=50, null=True, blank=True)
+    attendance_risk = models.BooleanField(default=False)
 
     @property
     def current_semester(self):
@@ -128,3 +129,24 @@ class AcademicRecord(models.Model):
 
     def __str__(self):
         return f"{self.student.user.name} - {self.course.code} ({self.semester}): {self.grade}"
+
+class AttendanceMonitoringLog(models.Model):
+    date_performed = models.DateTimeField(auto_now_add=True)
+    students_analyzed = models.IntegerField(default=0)
+    students_at_risk = models.IntegerField(default=0)
+    emails_sent = models.IntegerField(default=0)
+    reports_generated = models.IntegerField(default=0)
+    summary_insight = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Monitoring Log - {self.date_performed.date()}"
+
+class AttendanceIntervention(models.Model):
+    log = models.ForeignKey(AttendanceMonitoringLog, on_delete=models.CASCADE, related_name='interventions')
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    overall_attendance = models.DecimalField(max_digits=5, decimal_places=2)
+    notification_sent = models.BooleanField(default=False)
+    date_sent = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Intervention for {self.student.enrollment_number} on {self.log.date_performed.date()}"
