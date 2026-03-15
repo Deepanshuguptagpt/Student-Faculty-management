@@ -1,4 +1,4 @@
-{% extends 'dashboards/admin/base.html' %}
+{% extends 'dashboards/admin/base_new.html' %}
 
 {% block title %}Fee Management{% endblock %}
 
@@ -13,12 +13,27 @@
 </div>
 
 <div class="card">
-    <h3>All Fee Records</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0;">All Fee Records</h3>
+        <a href="{% url 'initialize_default_fees' %}" 
+           style="padding: 10px 20px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; transition: background 0.3s;"
+           onclick="return confirm('This will add ₹60,000 semester fees for all students (1st & 2nd Semester). Proceed?')">
+           Initialize Default Fees (₹1,20,000/yr)
+        </a>
+    </div>
 
     <!-- Filter Form -->
     <form method="GET" action=""
         style="display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 200px;">
+        
+        <div style="flex: 2; min-width: 250px;">
+            <label for="search_q" style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Search Student:</label>
+            <input type="text" name="q" id="search_q" value="{{ search_query|default:'' }}" 
+                   placeholder="Search by name or enrollment..."
+                   style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
             <label for="branch_filter"
                 style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Branch:</label>
             <select name="branch" id="branch_filter"
@@ -42,59 +57,48 @@
             </select>
         </div>
 
-        <div style="flex: 1; min-width: 150px;">
-            <label for="course_filter"
-                style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Course:</label>
-            <select name="course" id="course_filter"
-                style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                <option value="">-- All Courses --</option>
-                {% for c in courses %}
-                <option value="{{ c }}" {% if selected_course == c %}selected{% endif %}>{{ c }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
         <div>
             <button type="submit"
-                style="padding: 8px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Apply
-                Filters</button>
+                style="padding: 10px 25px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Apply</button>
             <a href="?"
-                style="padding: 8px 20px; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px; margin-left: 10px; display: inline-block;">Clear</a>
+                style="padding: 10px 20px; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px; margin-left: 10px; display: inline-block;">Clear</a>
         </div>
     </form>
     <table>
         <thead>
             <tr>
-                <th>Student</th>
-                <th>Enrollment No</th>
+                <th>Enrollment</th>
+                <th>Name</th>
                 <th>Semester</th>
-                <th>Amount Billed</th>
-                <th>Amount Paid</th>
+                <th>Fees for Semester</th>
+                <th>Paid</th>
+                <th>Remaining</th>
                 <th>Status</th>
-                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for fee in fees %}
             <tr>
-                <td>{{ fee.student.user.name }}</td>
                 <td>{{ fee.student.enrollment_number }}</td>
+                <td>{{ fee.student.user.name }}</td>
                 <td>{{ fee.semester }}</td>
                 <td>₹{{ fee.amount_due }}</td>
                 <td>₹{{ fee.amount_paid }}</td>
+                {% if fee.remaining_amount > 0 %}
+                <td style="font-weight: bold; color: #e74c3c;">₹{{ fee.remaining_amount }}</td>
+                {% else %}
+                <td style="font-weight: bold; color: #27ae60;">₹{{ fee.remaining_amount }}</td>
+                {% endif %}
                 <td>
                     <span
-                        class="status-badge {% if fee.status  ==  'Paid'  %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
+                        class="status-badge {% if fee.status == 'Paid' %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
                         {{ fee.status }}
                     </span>
-                </td>
-                <td><button
-                        style="padding: 4px 10px; border: none; background: #3498db; color: white; border-radius: 3px; cursor: pointer;">Edit</button>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7">No fee records found in the database.</td>
+                <td colspan="7" style="text-align: center; padding: 20px;">No fee records found. Click "Initialize Default Fees" to populate.</td>
             </tr>
             {% endfor %}
         </tbody>

@@ -46,6 +46,11 @@
         <div style="background: #F8FAFC; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #E2E8F0;">
             <form method="GET" action="/admin-panel/dashboard/" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
                 <input type="hidden" name="tab" value="students">
+                <div style="flex: 2; min-width: 250px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Search Student</label>
+                    <input type="text" name="q" value="{{ search_query|default:'' }}" placeholder="Name or enrollment..."
+                           style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                </div>
                 <div style="flex: 1; min-width: 200px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Branch</label>
                     <select name="branch" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
@@ -166,31 +171,69 @@
 
     <!-- Fees Tab -->
     <div id="fees-tab" class="tab-content {% if active_tab == 'fees' %}active{% endif %}">
-        <h3>Fee Management</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">Fee Management</h3>
+            <a href="{% url 'initialize_default_fees' %}" 
+               style="background: #10B981; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: background 0.3s;"
+               onclick="return confirm('Initialize ₹60,000 semester fees for all students?');">
+               Initialize All Fees
+            </a>
+        </div>
         <div style="background: #FEE2E2; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #EF4444;">
-            <div style="color: #475569; font-size: 14px; font-weight: 600;">Total Outstanding Dues</div>
+            <div style="color: #475569; font-size: 14px; font-weight: 600;">Total Outstanding Dues (Current Selection)</div>
             <div style="font-size: 36px; font-weight: 700; color: #EF4444; margin-top: 8px;">₹{{ total_dues|default:"0" }}</div>
+        </div>
+
+        <!-- Fees Filter Section -->
+        <div style="background: #F8FAFC; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #E2E8F0;">
+            <form method="GET" action="/admin-panel/dashboard/" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <input type="hidden" name="tab" value="fees">
+                <div style="flex: 2; min-width: 250px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Search Student</label>
+                    <input type="text" name="q" value="{{ search_query|default:'' }}" placeholder="Name or enrollment..."
+                           style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Branch</label>
+                    <select name="branch" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <option value="">-- All Branches --</option>
+                        {% for b in branches %}
+                        <option value="{{ b }}" {% if selected_branch == b %}selected{% endif %}>{{ b }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="btn-primary">Apply Filters</button>
+                    <a href="/admin-panel/dashboard/?tab=fees" class="btn-primary" style="background: #94A3B8; margin-left: 10px; text-decoration: none;">Clear</a>
+                </div>
+            </form>
         </div>
 
         <table>
             <thead>
                 <tr>
-                    <th>Student</th>
-                    <th>Enrollment No</th>
+                    <th>Enrollment</th>
+                    <th>Name</th>
                     <th>Semester</th>
-                    <th>Billed</th>
+                    <th>Fees for semester</th>
                     <th>Paid</th>
+                    <th>Remaining</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
                 {% for fee in fees %}
                 <tr>
+                    <td><strong>{{ fee.student.enrollment_number }}</strong></td>
                     <td>{{ fee.student.user.name }}</td>
-                    <td>{{ fee.student.enrollment_number }}</td>
                     <td>{{ fee.semester }}</td>
                     <td>₹{{ fee.amount_due }}</td>
                     <td>₹{{ fee.amount_paid }}</td>
+                    {% if fee.remaining_amount > 0 %}
+                    <td style="font-weight: 700; color: #EF4444;">₹{{ fee.remaining_amount }}</td>
+                    {% else %}
+                    <td style="font-weight: 700; color: #10B981;">₹{{ fee.remaining_amount }}</td>
+                    {% endif %}
                     <td>
                         <span class="status-badge {% if fee.status == 'Paid' %}status-paid{% elif fee.status == 'Pending' %}status-pending{% else %}status-overdue{% endif %}">
                             {{ fee.status }}
@@ -198,7 +241,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" style="text-align: center; color: #94A3B8; padding: 40px;">No fee records found</td></tr>
+                <tr><td colspan="7" style="text-align: center; color: #94A3B8; padding: 40px;">No fee records found. Click "Initialize All Fees" to populate.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

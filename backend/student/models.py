@@ -117,6 +117,10 @@ class FeeRecord(models.Model):
     due_date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
 
+    @property
+    def remaining_amount(self):
+        return self.amount_due - self.amount_paid
+
     def __str__(self):
         return f"{self.student.user.name} - {self.semester} Fee: {self.status}"
 

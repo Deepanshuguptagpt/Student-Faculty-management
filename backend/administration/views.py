@@ -7,11 +7,10 @@ def admin_dashboard(request):
     total_students = StudentProfile.objects.count()
     total_faculty = FacultyProfile.objects.count()
     
-    # Calculate fee analytics
+    # Calculate global fee analytics for top stats cards
     all_fees = FeeRecord.objects.all()
     total_collected = sum(f.amount_paid for f in all_fees)
-    total_pending = sum(f.amount_due - f.amount_paid for f in all_fees if f.status != 'Paid')
-    total_dues = sum(f.amount_due - f.amount_paid for f in all_fees if f.status != 'Paid')
+    global_total_pending = sum(f.remaining_amount for f in all_fees)
     
     # Get all students with filters
     students = StudentProfile.objects.all().select_related('user')
@@ -21,46 +20,56 @@ def admin_dashboard(request):
     year_filter = request.GET.get('year')
     course_filter = request.GET.get('course')
     section_filter = request.GET.get('section')
+    search_query = request.GET.get('q')
     active_tab = request.GET.get('tab', 'students')
     
     if branch_filter:
         students = students.filter(branch=branch_filter)
     if year_filter:
-        # Filter by current year (1st, 2nd, 3rd, 4th)
         from datetime import date
         current_year = date.today().year
         current_month = date.today().month
-        year_num = int(year_filter.split()[0][0])  # Extract number from "1st year", "2nd year", etc.
-        
-        # Calculate batch years that correspond to this year level
+        year_num = int(year_filter.split()[0][0])
         if current_month >= 7:
-            # After July, new academic year has started
             target_batch = current_year - (year_num - 1)
         else:
-            # Before July, still in previous academic year
             target_batch = current_year - year_num
-        
         students = students.filter(batch_year=target_batch)
     if course_filter:
         students = students.filter(course_name=course_filter)
     if section_filter:
         students = students.filter(section=section_filter)
+    if search_query:
+        from django.db.models import Q
+        students = students.filter(
+            Q(user__name__icontains=search_query) |
+            Q(enrollment_number__icontains=search_query)
+        )
     
     # Get faculty and fees for tabs
     faculty = FacultyProfile.objects.all().select_related('user', 'department').order_by('department__name')
-    fees = FeeRecord.objects.all().select_related('student__user').order_by('-due_date')[:50]
+    
+    # Fee logic for Dashboard tab
+    fees_query = FeeRecord.objects.filter(student__in=students).select_related('student__user').order_by('student__enrollment_number', 'semester')
+    
+    # Calculate dues based on current filtered selection (respecting Search/Branch/Year)
+    filtered_total_dues = sum(f.remaining_amount for f in fees_query)
+
+    # Hide already paid historical records for the table view only
+    fees = fees_query.exclude(status='Paid')
+    
+    if active_tab != 'fees':
+        fees = fees[:50]
     
     year_choices = ['1st year', '2nd year', '3rd year', '4th year']
-    
-    # Get unique sections from students (excluding None/empty)
     sections = StudentProfile.objects.exclude(section__isnull=True).exclude(section='').values_list('section', flat=True).distinct().order_by('section')
     
     context = {
         'total_students': total_students,
         'total_faculty': total_faculty,
         'total_collected': total_collected,
-        'total_pending': total_pending,
-        'total_dues': total_dues,
+        'total_pending': global_total_pending,  # Overall institute health
+        'total_dues': filtered_total_dues,      # Responsive to filters/search
         'students': students,
         'faculty': faculty,
         'fees': fees,
@@ -72,6 +81,7 @@ def admin_dashboard(request):
         'selected_year': year_filter,
         'selected_course': course_filter,
         'selected_section': section_filter,
+        'search_query': search_query,
         'active_tab': active_tab
     }
     return render(request, "dashboards/admin/overview_new.html", context)
@@ -84,6 +94,7 @@ def manage_students(request):
     branch_filter = request.GET.get('branch')
     year_filter = request.GET.get('year')
     course_filter = request.GET.get('course')
+    search_query = request.GET.get('q')
 
     if branch_filter:
         students = students.filter(branch=branch_filter)
@@ -104,6 +115,13 @@ def manage_students(request):
         students = students.filter(batch_year=target_batch)
     if course_filter:
         students = students.filter(course_name=course_filter)
+    
+    if search_query:
+        from django.db.models import Q
+        students = students.filter(
+            Q(user__name__icontains=search_query) |
+            Q(enrollment_number__icontains=search_query)
+        )
 
     year_choices = ['1st year', '2nd year', '3rd year', '4th year']
 
@@ -112,6 +130,7 @@ def manage_students(request):
         'selected_branch': branch_filter, 
         'selected_year': year_filter, 
         'selected_course': course_filter,
+        'search_query': search_query,
         'branches': [b[0] for b in BRANCH_CHOICES],
         'courses': [c[0] for c in COURSE_CHOICES],
         'years': year_choices
@@ -124,30 +143,98 @@ def manage_faculty(request):
 
 
 def fee_management(request):
-    fees = FeeRecord.objects.all().select_related('student__user').order_by('-due_date')
+    # Get all students first to ensure everyone is listed
+    students = StudentProfile.objects.all().select_related('user')
     
     branch_filter = request.GET.get('branch')
     semester_filter = request.GET.get('semester')
     course_filter = request.GET.get('course')
+    search_query = request.GET.get('q')
 
     if branch_filter:
-        fees = fees.filter(student__branch=branch_filter)
+        students = students.filter(branch=branch_filter)
+    if course_filter:
+        students = students.filter(course_name=course_filter)
+    if search_query:
+        from django.db.models import Q
+        students = students.filter(
+            Q(user__name__icontains=search_query) |
+            Q(enrollment_number__icontains=search_query)
+        )
+
+    # Now get fees but filter them by the students we've narrowed down
+    fees = FeeRecord.objects.filter(student__in=students).select_related('student__user').order_by('student__enrollment_number', 'semester')
+    
     if semester_filter:
         fees = fees.filter(semester=semester_filter)
-    if course_filter:
-        fees = fees.filter(student__course_name=course_filter)
-
-    total_dues = sum(f.amount_due for f in fees if f.status != 'Paid')
+    else:
+        # Per USER request: By default, show only the records that are not fully paid
+        # This keeps the dashboard clean and focused on current/pending work
+        fees = fees.exclude(status='Paid')
+    
+    total_dues = sum(f.remaining_amount for f in fees)
+    
     return render(request, "dashboards/admin/fees.html", {
         'fees': fees, 
         'total_dues': total_dues,
         'selected_branch': branch_filter,
         'selected_semester': semester_filter,
         'selected_course': course_filter,
+        'search_query': search_query,
         'branches': [b[0] for b in BRANCH_CHOICES],
         'courses': [c[0] for c in COURSE_CHOICES],
         'semesters': [s[0] for s in SEMESTER_CHOICES]
     })
+
+def initialize_default_fees(request):
+    from datetime import date
+    students = StudentProfile.objects.all()
+    created_count = 0
+    
+    current_year_now = date.today().year
+    current_month_now = date.today().month
+
+    for student in students:
+        # Calculate current semester integer
+        years_diff = current_year_now - student.batch_year
+        if current_month_now >= 7:
+            s_int = years_diff * 2 + 1
+        else:
+            s_int = years_diff * 2
+        
+        s_int = max(1, s_int)
+        
+        # Determine the two semesters for the current academic year
+        if s_int % 2 != 0: # Odd (1, 3, 5, 7)
+            sem_a = s_int
+            sem_b = s_int + 1
+        else: # Even (2, 4, 6, 8)
+            sem_a = s_int - 1
+            sem_b = s_int
+            
+        for i in [sem_a, sem_b]:
+            if i > 8: continue # Only up to 8th semester
+            
+            suffix = "th"
+            if i == 1: suffix = "st"
+            elif i == 2: suffix = "nd"
+            elif i == 3: suffix = "rd"
+            sem_str = f"{i}{suffix} Semester"
+            
+            fee, created = FeeRecord.objects.get_or_create(
+                student=student,
+                semester=sem_str,
+                defaults={
+                    'amount_due': 60000.00,
+                    'amount_paid': 0.00,
+                    'due_date': date(current_year_now, 6, 30) if i % 2 == 0 else date(current_year_now, 12, 31),
+                    'status': 'Pending'
+                }
+            )
+            if created:
+                created_count += 1
+                
+    return redirect('admin_dashboard') # Redirect to main dashboard
 
 def add_student(request):
     if request.method == 'POST':

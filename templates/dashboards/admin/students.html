@@ -1,4 +1,4 @@
-{% extends 'dashboards/admin/base.html' %}
+{% extends 'dashboards/admin/base_new.html' %}
 
 {% block title %}Manage Students{% endblock %}
 
@@ -14,7 +14,15 @@
     <!-- Filter Form -->
     <form method="GET" action=""
         style="display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 200px; max-width: 300px;">
+        
+        <div style="flex: 2; min-width: 250px;">
+            <label for="search_q" style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Search Student:</label>
+            <input type="text" name="q" id="search_q" value="{{ search_query|default:'' }}" 
+                   placeholder="Search by name or enrollment..."
+                   style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+
+        <div style="flex: 1; min-width: 200px;">
             <label for="branch_filter"
                 style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Branch:</label>
             <select name="branch" id="branch_filter"
@@ -26,7 +34,7 @@
             </select>
         </div>
 
-        <div style="flex: 0 0 150px;">
+        <div style="flex: 0 0 120px;">
             <label for="year_filter" style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Year:</label>
             <select name="year" id="year_filter"
                 style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
@@ -37,7 +45,7 @@
             </select>
         </div>
 
-        <div style="flex: 0 0 150px;">
+        <div style="flex: 0 0 120px;">
             <label for="course_filter"
                 style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Course:</label>
             <select name="course" id="course_filter"
@@ -49,12 +57,11 @@
             </select>
         </div>
 
-        <div style="flex: 0 0 auto;">
+        <div>
             <button type="submit"
-                style="padding: 8px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Apply
-                Filters</button>
+                style="padding: 10px 25px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Apply</button>
             <a href="?"
-                style="padding: 8px 20px; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px; margin-left: 10px; display: inline-block;">Clear</a>
+                style="padding: 10px 20px; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px; margin-left: 10px; display: inline-block;">Clear</a>
         </div>
     </form>
     <table>
