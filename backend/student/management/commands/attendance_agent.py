@@ -27,14 +27,6 @@ class Command(BaseCommand):
         # 2. Initialize log
         log = AttendanceMonitoringLog.objects.create()
         
-        # Test student emails map (Enrollment prefix or name suffix to test email)
-        TEST_EMAILS = [
-            "kanak.rawataiml2023@indoreinstitute.com",
-            "deepanshu.guptaaiml2023@indoreinstitute.com",
-            "krishna.kavishwaraiml2023@indoreinstitute.com",
-            "diksha.akveanaiml2023@indoreinstitute.com"
-        ]
-        
         COORDINATOR_EMAIL = "rawatkanak03@gmail.com"
         COORDINATOR_NAME = "Mrs. Sukrati Agrawal"
         
@@ -75,24 +67,22 @@ class Command(BaseCommand):
                     overall_attendance=overall_pct
                 )
                 
-                # 5. Automated Notification (Email)
-                # Map to test emails for demo purposes
-                target_email = None
-                if emails_sent < len(TEST_EMAILS):
-                    target_email = TEST_EMAILS[emails_sent]
-                else:
-                    # Skip sending beyond the 4 test emails to avoid spam/limits
-                    intervention.save()
-                    continue
+                # 5. Automated Notification (Email to Parent)
+                target_email = student.parent_email
+                
+                if not target_email:
+                    # Fallback or skip if no parent email
+                     intervention.save()
+                     continue
                 
                 email_body = f"""
-Dear {student.user.name},
+Dear Parent/Guardian of {student.user.name},
 
 Enrollment Number: {student.enrollment_number}
 Branch: {student.branch}
 Semester: {student.current_semester}
 
-Your current overall attendance is {overall_pct}%, which is below the minimum required threshold of 75%.
+Your ward's current overall attendance is {overall_pct}%, which is below the minimum required threshold of 75%.
 
 Theory Attendance: {data['global_theory_pct']}%
 Practical Attendance: {data['global_practical_pct']}%

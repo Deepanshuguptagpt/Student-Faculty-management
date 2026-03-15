@@ -37,6 +37,7 @@ class StudentProfile(models.Model):
     address = models.TextField(null=True, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
     section = models.CharField(max_length=50, null=True, blank=True)
+    parent_email = models.EmailField(null=True, blank=True)
     attendance_risk = models.BooleanField(default=False)
 
     @property
