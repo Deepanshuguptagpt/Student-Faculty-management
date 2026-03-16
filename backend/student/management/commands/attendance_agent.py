@@ -3,8 +3,11 @@ import django
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import timedelta
-from django.core.mail import send_mail
+import pandas as pd
+from io import BytesIO
+from django.core.mail import send_mail, EmailMessage
 from backend.student.models import StudentProfile, AttendanceMonitoringLog, AttendanceIntervention
+from backend.faculty.models import SectionCoordinator
 from backend.student.utils import calculate_detailed_attendance
 from core.ollama_utils import generate_ollama_insight
 
@@ -30,13 +33,12 @@ class Command(BaseCommand):
         COORDINATOR_EMAIL = "rawatkanak03@gmail.com"
         COORDINATOR_NAME = "Mrs. Sukrati Agrawal"
         
-        students = StudentProfile.objects.all()
+        # USER REQUEST: Only run for AIML-1 section as other sections don't have timetable data yet
+        students = StudentProfile.objects.filter(section='AIML-1')
         log.students_analyzed = students.count()
         
-        at_risk_count = 0
         emails_sent = 0
-        
-        at_risk_data = [] # For coordinator report
+        at_risk_by_section = {} # (branch, section) -> list of student data
         lowest_attendance_list = []
         close_to_threshold_list = []
         course_performance = {} # track course-wise attendance across all students
@@ -54,9 +56,8 @@ class Command(BaseCommand):
                 course_performance[code]['total'] += cd['theory']['total'] + cd['practical']['total']
                 course_performance[code]['present'] += cd['theory']['present'] + cd['practical']['present']
 
-            # 4. Check Threshold
-            if overall_pct < 75.0:
-                at_risk_count += 1
+            # 4. Check Threshold (Updated to 85.0% as per USER request)
+            if overall_pct < 85.0:
                 student.attendance_risk = True
                 student.save()
                 
@@ -82,7 +83,7 @@ Enrollment Number: {student.enrollment_number}
 Branch: {student.branch}
 Semester: {student.current_semester}
 
-Your ward's current overall attendance is {overall_pct}%, which is below the minimum required threshold of 75%.
+Your ward's current overall attendance is {overall_pct}%, which is below the minimum required threshold of 85%.
 
 Theory Attendance: {data['global_theory_pct']}%
 Practical Attendance: {data['global_practical_pct']}%
@@ -110,13 +111,19 @@ Indore Institute Management Portal
                 except Exception as e:
                     self.stdout.write(self.style.ERROR(f"Failed to send email to {target_email}: {str(e)}"))
 
-                # Add to report data
-                at_risk_data.append({
-                    'name': student.user.name,
-                    'enrollment': student.enrollment_number,
-                    'overall': overall_pct,
-                    'deficit': round(75.0 - float(overall_pct), 1),
-                    'courses': data['course_data']
+                # Add to section-wise report data
+                key = (student.branch, student.section)
+                if key not in at_risk_by_section:
+                    at_risk_by_section[key] = []
+                    
+                at_risk_by_section[key].append({
+                    'Name': student.user.name,
+                    'Enrollment': student.enrollment_number,
+                    'Branch': student.branch,
+                    'Section': student.section,
+                    'Overall Attendance %': overall_pct,
+                    'Deficit %': round(85.0 - float(overall_pct), 1),
+                    'Parent Email': student.parent_email
                 })
             else:
                 student.attendance_risk = False
@@ -137,66 +144,72 @@ Indore Institute Management Portal
             if pct < 70:
                 low_perf_courses.append(f"{code} ({round(pct, 1)}%)")
 
-        # 6. Faculty Coordinator Report
-        report_log_str = f"Students at risk: {at_risk_count}\n"
-        for item in at_risk_data:
-            report_log_str += f"- {item['name']} ({item['enrollment']}): {item['overall']}% (Deficit: {item['deficit']}%)\n"
+        # 6. Send Section-Specific Reports to Coordinators
+        total_at_risk = 0
+        for (branch, section), students_list in at_risk_by_section.items():
+            total_at_risk += len(students_list)
             
-        # 7. Generate AI Insights via Ollama
-        prompt = f"""
-Analyze the following student attendance data for the last 15 days and provide a concise academic summary:
-Total students analyzed: {log.students_analyzed}
-Students below 75%: {at_risk_count}
-Students close to threshold: {len(close_to_threshold_list)}
-Lowest attendance: {", ".join(top_lowest)}
-Common low-attendance courses: {", ".join(low_perf_courses) if low_perf_courses else "None"}
+            # Find coordinator
+            coord = SectionCoordinator.objects.filter(branch=branch, section=section).first()
+            coord_name = coord.faculty.user.name if coord else "Coordinator"
+            
+            # USER REQUEST: Use this specific email for coordinators
+            coord_email = "rawatkanak03@gmail.com"
+            
+            # 6a. Generate Excel Attachment
+            df = pd.DataFrame(students_list)
+            excel_buffer = BytesIO()
+            with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='At Risk Students')
+            excel_buffer.seek(0)
+            
+            # 6b. Generate Section-wise AI Insights (Optional but better)
+            section_summary = f"Section: {section}, Branch: {branch}\nStudents at risk: {len(students_list)}"
+            section_prompt = f"Provide 2 quick actionable insights for coordinator {coord_name} regarding these {len(students_list)} at-risk students in {section}."
+            section_insight = generate_ollama_insight(section_prompt)
+            
+            # 6c. Send Email with Attachment
+            email_body = f"""
+Dear {coord_name},
 
-Provide 3 actionable insights for the Faculty Coordinator {COORDINATOR_NAME}.
-        """
-        self.stdout.write("Generating AI insights via Ollama...")
-        insight = generate_ollama_insight(prompt)
-        log.summary_insight = insight
-        
-        # 8. Send Report to Coordinator
-        coordinator_body = f"""
-Dear {COORDINATOR_NAME},
-
-Here is the 15-day Attendance Monitoring Report.
+This is the automated attendance monitoring report for {branch} - {section}.
 
 Summary:
-- Total Students Analyzed: {log.students_analyzed}
-- Students at Risk (< 75%): {at_risk_count}
-- Notification Emails Sent: {emails_sent}
+- Section: {section}
+- Students below 75%: {len(students_list)}
 
-AI Generated Insights:
-{insight}
+AI Insights for your section:
+{section_insight}
 
-Detailed List of At-Risk Students:
-{report_log_str}
-
-Please take necessary academic actions.
+Please find the attached Excel file for the complete list of at-risk students and their details.
 
 Regards,
-Attendance Monitoring Agent
-        """
-        
-        try:
-            send_mail(
-                '15-Day Attendance Analysis Report',
-                coordinator_body,
-                'noreply@indoreinstitute.com',
-                [COORDINATOR_EMAIL],
-                fail_silently=True,
-            )
-            log.reports_generated += 1
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Failed to send coordinator report: {str(e)}"))
+AI Attendance Agent
+            """
+            
+            try:
+                email = EmailMessage(
+                    subject=f'Attendance Report: {branch} - {section}',
+                    body=email_body,
+                    from_email='noreply@indoreinstitute.com',
+                    to=[coord_email],
+                )
+                email.attach(f'At_Risk_Students_{section}.xlsx', excel_buffer.getvalue(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                email.send(fail_silently=True)
+                log.reports_generated += 1
+                self.stdout.write(self.style.SUCCESS(f"Sent report for {section} to {coord_email}"))
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Failed to send report for {section}: {str(e)}"))
+
+        # 7. Global AI Insights for the Log
+        global_prompt = f"Total students analyzed: {log.students_analyzed}. Total at risk: {total_at_risk}. Provide a one-sentence overview."
+        log.summary_insight = generate_ollama_insight(global_prompt)
+        log.students_at_risk = total_at_risk
 
         # 9. Update Log
-        log.students_at_risk = at_risk_count
+        log.students_at_risk = total_at_risk
         log.emails_sent = emails_sent
-        log.reports_generated = 1
         log.save()
         
-        self.stdout.write(self.style.SUCCESS(f"Analysis Complete. Found {at_risk_count} students at risk. Log ID: {log.id}"))
-        self.stdout.write(f"AI Insight: {insight[:100]}...")
+        self.stdout.write(self.style.SUCCESS(f"Analysis Complete. Found {total_at_risk} students at risk. Log ID: {log.id}"))
+        self.stdout.write(f"AI Insight: {log.summary_insight[:100]}...")

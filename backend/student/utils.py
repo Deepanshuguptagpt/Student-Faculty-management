@@ -36,8 +36,14 @@ def calculate_detailed_attendance(profile, start_date=None, end_date=None):
         
         if base_code not in course_groups:
             # Find faculty for the theory part primarily, or whatever is available
-            faculty_assignment = FacultyCourseAssignment.objects.filter(course__code__icontains=base_code).first()
-            faculty_name = faculty_assignment.faculty.user.name if faculty_assignment else "TBD"
+            # Added select_related for performance and safer access
+            faculty_assignment = FacultyCourseAssignment.objects.filter(
+                course__code__icontains=base_code
+            ).select_related('faculty__user').first()
+            
+            faculty_name = "TBD"
+            if faculty_assignment and faculty_assignment.faculty and hasattr(faculty_assignment.faculty, 'user'):
+                faculty_name = faculty_assignment.faculty.user.name
             
             course_groups[base_code] = {
                 'name': course.name.replace(' Lab', '').replace(' practical', ''),

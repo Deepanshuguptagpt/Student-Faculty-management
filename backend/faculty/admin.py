@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import Department, FacultyProfile, FacultyCourseAssignment
+from .models import Department, FacultyProfile, FacultyCourseAssignment, SectionCoordinator
+
+@admin.register(SectionCoordinator)
+class SectionCoordinatorAdmin(admin.ModelAdmin):
+    list_display = ('branch', 'section', 'faculty')
+    list_filter = ('branch', 'section')
+    search_fields = ('section', 'faculty__user__name')
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):

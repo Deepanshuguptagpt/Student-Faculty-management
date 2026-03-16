@@ -56,3 +56,14 @@ class Assignment(models.Model):
 
     def __str__(self):
         return self.title
+
+class SectionCoordinator(models.Model):
+    branch = models.CharField(max_length=100, choices=BRANCH_CHOICES)
+    section = models.CharField(max_length=50)
+    faculty = models.ForeignKey(FacultyProfile, on_delete=models.CASCADE, related_name='coordinated_sections')
+
+    class Meta:
+        unique_together = ('branch', 'section')
+
+    def __str__(self):
+        return f"{self.section} Coordinator: {self.faculty.user.name}"
