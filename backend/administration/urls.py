@@ -8,6 +8,7 @@ urlpatterns = [
     path('faculty/', views.manage_faculty, name='manage_faculty'),
     path('fees/', views.fee_management, name='fee_management'),
     path('fees/initialize/', views.initialize_default_fees, name='initialize_default_fees'),
+    path('fees/run-agent/', views.run_fee_agent_view, name='run_fee_agent'),
     
     path('students/add/', views.add_student, name='add_student'),
     path('students/edit/<int:student_id>/', views.edit_student, name='edit_student'),

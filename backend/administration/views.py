@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect
 from authentication.models import User
-from backend.student.models import StudentProfile, FeeRecord, BRANCH_CHOICES, COURSE_CHOICES, SEMESTER_CHOICES
+from backend.student.models import StudentProfile, FeeRecord, BRANCH_CHOICES, COURSE_CHOICES, SEMESTER_CHOICES, FeeMonitoringLog
 from backend.faculty.models import FacultyProfile
+from django.core.management import call_command
+from django.contrib import messages
 
 def admin_dashboard(request):
     total_students = StudentProfile.objects.count()
@@ -174,6 +176,9 @@ def fee_management(request):
     
     total_dues = sum(f.remaining_amount for f in fees)
     
+
+    logs = FeeMonitoringLog.objects.all().order_by('-date_performed')[:5]
+    
     return render(request, "dashboards/admin/fees.html", {
         'fees': fees, 
         'total_dues': total_dues,
@@ -183,8 +188,17 @@ def fee_management(request):
         'search_query': search_query,
         'branches': [b[0] for b in BRANCH_CHOICES],
         'courses': [c[0] for c in COURSE_CHOICES],
-        'semesters': [s[0] for s in SEMESTER_CHOICES]
+        'semesters': [s[0] for s in SEMESTER_CHOICES],
+        'agent_logs': logs
     })
+
+def run_fee_agent_view(request):
+    try:
+        call_command('fee_agent', force=True)
+        messages.success(request, "Fee Management Agent executed successfully. Reminder emails sent.")
+    except Exception as e:
+        messages.error(request, f"Error running Fee Management Agent: {str(e)}")
+    return redirect('fee_management')
 
 def initialize_default_fees(request):
     from datetime import date

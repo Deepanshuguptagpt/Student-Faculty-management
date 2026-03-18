@@ -155,3 +155,24 @@ class AttendanceIntervention(models.Model):
 
     def __str__(self):
         return f"Intervention for {self.student.enrollment_number} on {self.log.date_performed.date()}"
+
+class FeeMonitoringLog(models.Model):
+    date_performed = models.DateTimeField(auto_now_add=True)
+    students_analyzed = models.IntegerField(default=0)
+    overdue_students = models.IntegerField(default=0)
+    emails_sent = models.IntegerField(default=0)
+    reports_generated = models.IntegerField(default=0)
+    summary_insight = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Fee Monitoring Log - {self.date_performed.date()}"
+
+class FeeIntervention(models.Model):
+    log = models.ForeignKey(FeeMonitoringLog, on_delete=models.CASCADE, related_name='interventions')
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    amount_overdue = models.DecimalField(max_digits=10, decimal_places=2)
+    notification_sent = models.BooleanField(default=False)
+    date_sent = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Fee Intervention for {self.student.enrollment_number} on {self.log.date_performed.date()}"
