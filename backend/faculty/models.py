@@ -53,9 +53,25 @@ class Assignment(models.Model):
     year = models.CharField(max_length=20, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateField(null=True, blank=True)
+    attachment = models.FileField(upload_to='assignments/materials/', null=True, blank=True, help_text="Upload instructions/notes in PDF or Word format")
 
     def __str__(self):
         return self.title
+
+class AssignmentSubmission(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
+    student = models.ForeignKey('student.StudentProfile', on_delete=models.CASCADE, related_name='submissions')
+    content = models.TextField(null=True, blank=True, help_text="Submission notes")
+    attachment = models.FileField(upload_to='assignments/submissions/', null=True, blank=True, help_text="Upload your work in PDF or Word format")
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    grade = models.CharField(max_length=10, null=True, blank=True)
+    feedback = models.TextField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('assignment', 'student')
+
+    def __str__(self):
+        return f"{self.student.user.name} - {self.assignment.title}"
 
 class SectionCoordinator(models.Model):
     branch = models.CharField(max_length=100, choices=BRANCH_CHOICES)

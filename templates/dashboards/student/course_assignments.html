@@ -1,0 +1,95 @@
+{% extends 'dashboards/student/base_new.html' %}
+
+{% block title %}Assignments - {{ course.name }}{% endblock %}
+
+{% block content %}
+<style>
+    .course-header {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .assignment-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border-left: 5px solid #667eea;
+        transition: transform 0.3s;
+    }
+    .assignment-card:hover {
+        transform: translateY(-2px);
+    }
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .status-pending { background: #fff3e0; color: #e65100; }
+    .status-submitted { background: #e8f5e9; color: #2e7d32; }
+</style>
+
+<div class="course-header">
+    <div>
+        <h2 style="margin:0;">Assignments for {{ course.name }}</h2>
+        <p style="margin:5px 0 0; color:#7f8c8d;">{{ course.code }} | Branch: {{ profile.branch }}</p>
+    </div>
+    <a href="{% url 'student_courses' %}" style="color:#667eea; text-decoration:none; font-weight:600;">← All Courses</a>
+</div>
+
+{% if assignments %}
+    {% for a in assignments %}
+    <div class="assignment-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+            <div>
+                <h3 style="margin:0; color:#2c3e50;">{{ a.title }}</h3>
+                <small style="color:#95a5a6;">Posted on {{ a.created_at|date:"M d, Y" }}</small>
+            </div>
+            {% if a.my_submission %}
+                <span class="status-badge status-submitted">✅ Handed In</span>
+            {% else %}
+                <span class="status-badge status-pending">🕒 Assigned</span>
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom:15px; color:#555;">
+            {{ a.description|truncatewords:30 }}
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:13px; color:#e65100; font-weight:600;">
+                📅 Due: {{ a.due_date|default:"No due date" }}
+            </div>
+            <div>
+                {% if a.attachment %}
+                    <a href="{{ a.attachment.url }}" target="_blank" style="margin-right:15px; color:#667eea; text-decoration:none; font-size:14px;">📎 Materials</a>
+                {% endif %}
+                <a href="{% url 'student_submit_assignment' a.id %}" class="btn" style="text-decoration:none; background:#667eea; color:white; padding:8px 20px; border-radius:6px; font-weight:600;">
+                    {% if a.my_submission %}👁️ View / Edit Submission{% else %}✏️ Submit Now{% endif %}
+                </a>
+            </div>
+        </div>
+        
+        {% if a.my_submission and a.my_submission.grade %}
+            <div style="margin-top:15px; background:#f0f4ff; padding:10px; border-radius:6px; font-size:14px;">
+                <strong>Grade:</strong> <span style="color:#27ae60; font-weight:700;">{{ a.my_submission.grade }}</span>
+                {% if a.my_submission.feedback %}
+                <br><strong>Feedback:</strong> {{ a.my_submission.feedback }}
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div style="text-align:center; padding:100px; color:#95a5a6;">
+        <p>No assignments found for this course and branch.</p>
+    </div>
+{% endif %}
+{% endblock %}

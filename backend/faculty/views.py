@@ -20,13 +20,25 @@ def faculty_dashboard(request):
         # Handle POST request for creating assignment
         if request.method == 'POST' and request.POST.get('action') == 'create_assignment':
             from .models import Assignment
+            import datetime
             title = request.POST.get('title')
             description = request.POST.get('description')
             course_id = request.POST.get('course_id')
             branch = request.POST.get('branch')
             year = request.POST.get('year')
             due_date = request.POST.get('due_date')
+            attachment = request.FILES.get('attachment')
             
+            # Validation: Due date cannot be in the past
+            if due_date:
+                selected_date = datetime.datetime.strptime(due_date, '%Y-%m-%d').date()
+                if selected_date < datetime.date.today():
+                    return render(request, "dashboards/faculty/overview_new.html", {
+                        "profile": profile,
+                        "error": "Due date cannot be in the past.",
+                        "active_tab": "assignments"
+                    })
+
             if title and course_id and branch:
                 Assignment.objects.create(
                     faculty=profile,
@@ -35,7 +47,8 @@ def faculty_dashboard(request):
                     course_id=course_id,
                     branch=branch,
                     year=year,
-                    due_date=due_date if due_date else None
+                    due_date=due_date if due_date else None,
+                    attachment=attachment
                 )
             return redirect('/faculty/dashboard/?tab=assignments')
         
@@ -312,6 +325,8 @@ def faculty_assignments(request):
         branch = request.POST.get('branch')
         year = request.POST.get('year')
         due_date = request.POST.get('due_date')
+        attachment = request.FILES.get('attachment')
+        
         if title and course_id and branch:
             from .models import Assignment
             Assignment.objects.create(
@@ -321,7 +336,8 @@ def faculty_assignments(request):
                 course_id=course_id,
                 branch=branch,
                 year=year,
-                due_date=due_date if due_date else None
+                due_date=due_date if due_date else None,
+                attachment=attachment
             )
         return redirect('faculty_assignments')
         
@@ -351,4 +367,26 @@ def faculty_assignments(request):
         'selected_branch': branch_filter,
         'selected_year': year_filter,
         'selected_course': course_filter
+    })
+
+def faculty_assignment_detail(request, assignment_id):
+    profile = get_faculty_profile(request)
+    from .models import Assignment, AssignmentSubmission
+    assignment = Assignment.objects.get(id=assignment_id, faculty=profile)
+    submissions = AssignmentSubmission.objects.filter(assignment=assignment).select_related('student__user')
+    
+    if request.method == 'POST' and request.POST.get('action') == 'grade':
+        submission_id = request.POST.get('submission_id')
+        grade = request.POST.get('grade')
+        feedback = request.POST.get('feedback')
+        sub = AssignmentSubmission.objects.get(id=submission_id, assignment=assignment)
+        sub.grade = grade
+        sub.feedback = feedback
+        sub.save()
+        return redirect('faculty_assignment_detail', assignment_id=assignment_id)
+        
+    return render(request, "dashboards/faculty/assignment_detail.html", {
+        'profile': profile,
+        'assignment': assignment,
+        'submissions': submissions
     })

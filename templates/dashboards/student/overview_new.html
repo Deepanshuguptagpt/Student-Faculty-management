@@ -102,12 +102,22 @@
         <div id="courses-tab" class="tab-content">
             <h3>My Courses</h3>
             {% for enrollment in enrollments %}
-            <div class="course-item">
-                <div class="course-code">{{ enrollment.course.code }}</div>
-                <div class="course-name">{{ enrollment.course.name }}</div>
-                <div class="course-meta">
-                    Semester {{ enrollment.semester }} • {{ enrollment.course.credits }} Credits
+            <div class="course-item" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 15px;">
+                <div>
+                    <div class="course-code" style="font-weight: 700; color: #1e293b;">{{ enrollment.course.code }}</div>
+                    <div class="course-name" style="color: #475569;">{{ enrollment.course.name }}</div>
+                    <div class="course-meta" style="font-size: 13px; color: #94a3b8;">
+                        Semester {{ enrollment.semester }} • {{ enrollment.course.credits }} Credits
+                    </div>
                 </div>
+                <a href="{% url 'student_course_assignments' enrollment.course.id %}" style="background: #EEF2FF; color: #4F46E5; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; transition: all 0.2s; position: relative;" onmouseover="this.style.background='#E0E7FF'" onmouseout="this.style.background='#EEF2FF'">
+                    📝 View Assignments
+                    {% if enrollment.pending_assignments > 0 %}
+                    <span style="position: absolute; top: -8px; right: -8px; background: #EF4444; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        {{ enrollment.pending_assignments }}
+                    </span>
+                    {% endif %}
+                </a>
             </div>
             {% empty %}
             <p style="text-align: center; color: #94a3b8; padding: 40px;">No courses enrolled</p>

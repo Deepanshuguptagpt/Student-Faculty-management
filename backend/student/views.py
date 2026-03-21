@@ -22,6 +22,17 @@ def student_dashboard(request):
         fee_records = FeeRecord.objects.filter(student=student_profile)
         academic_records = AcademicRecord.objects.filter(student=student_profile)
 
+        # Calculate pending assignments for notification count
+        from backend.faculty.models import Assignment, AssignmentSubmission
+        for enrollment in enrollments:
+            total_assignments = Assignment.objects.filter(course=enrollment.course, branch=student_profile.branch).count()
+            submitted_count = AssignmentSubmission.objects.filter(
+                assignment__course=enrollment.course, 
+                assignment__branch=student_profile.branch,
+                student=student_profile
+            ).count()
+            enrollment.pending_assignments = total_assignments - submitted_count
+
         attendance_data = calculate_detailed_attendance(student_profile)
 
         total_due = sum(fee.amount_due - fee.amount_paid for fee in fee_records if fee.status != 'Paid')
@@ -39,6 +50,8 @@ def student_dashboard(request):
         }
         return render(request, "dashboards/student/overview_new.html", context)
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         return render(request, "dashboards/student/overview_new.html", {"error": str(e)})
 
 def student_attendance(request):
@@ -70,7 +83,61 @@ def student_fees(request):
 def student_courses(request):
     profile = get_student_profile(request)
     records = Enrollment.objects.filter(student=profile)
+    
+    # Calculate pending assignments for notification count
+    from backend.faculty.models import Assignment, AssignmentSubmission
+    for enrollment in records:
+        total = Assignment.objects.filter(course=enrollment.course, branch=profile.branch).count()
+        submitted = AssignmentSubmission.objects.filter(
+            assignment__course=enrollment.course, 
+            assignment__branch=profile.branch,
+            student=profile
+        ).count()
+        enrollment.pending_assignments = total - submitted
+
     return render(request, "dashboards/student/courses.html", {'profile': profile, 'records': records})
+
+def student_course_assignments(request, course_id):
+    profile = get_student_profile(request)
+    course = Course.objects.get(id=course_id)
+    from backend.faculty.models import Assignment, AssignmentSubmission
+    assignments = Assignment.objects.filter(course=course, branch=profile.branch).order_by('-created_at')
+    
+    # Enrich assignments with student's current submission status
+    for a in assignments:
+        a.my_submission = AssignmentSubmission.objects.filter(assignment=a, student=profile).first()
+        
+    return render(request, "dashboards/student/course_assignments.html", {
+        'profile': profile,
+        'course': course,
+        'assignments': assignments
+    })
+
+def student_submit_assignment(request, assignment_id):
+    profile = get_student_profile(request)
+    from backend.faculty.models import Assignment, AssignmentSubmission
+    assignment = Assignment.objects.get(id=assignment_id)
+    
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        attachment = request.FILES.get('attachment')
+        
+        AssignmentSubmission.objects.update_or_create(
+            assignment=assignment,
+            student=profile,
+            defaults={
+                'content': content,
+                'attachment': attachment
+            }
+        )
+        return redirect('student_course_assignments', course_id=assignment.course.id)
+        
+    submission = AssignmentSubmission.objects.filter(assignment=assignment, student=profile).first()
+    return render(request, "dashboards/student/submit_assignment.html", {
+        'profile': profile,
+        'assignment': assignment,
+        'submission': submission
+    })
 
 def student_academics(request):
     profile = get_student_profile(request)

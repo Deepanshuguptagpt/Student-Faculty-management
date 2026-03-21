@@ -1,0 +1,134 @@
+{% extends 'dashboards/student/base_new.html' %}
+
+{% block title %}Submit Assignment - {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<style>
+    .submit-container {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 30px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .assignment-details {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .submission-form {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border-top: 5px solid #667eea;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 8px;
+    }
+    .form-group textarea, .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #eef2f7;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+    .form-group textarea:focus, .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    .btn-submit {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        width: 100%;
+    }
+    .btn-submit:hover {
+        background: #5a6fd6;
+    }
+    .back-btn {
+        color: #7f8c8d;
+        text-decoration: none;
+        font-size: 14px;
+        margin-bottom: 20px;
+        display: inline-block;
+    }
+</style>
+
+<div style="max-width:1000px; margin:0 auto; padding-top:20px;">
+    <a href="{% url 'student_course_assignments' assignment.course.id %}" class="back-btn">← Back to Assignments</a>
+    
+    <div class="submit-container">
+        <div class="assignment-details">
+            <h2 style="margin-top:0;">{{ assignment.title }}</h2>
+            <div style="color:#7f8c8d; font-size:14px; margin-bottom:20px;">
+                {{ assignment.course.code }} | Due: <span style="color:#e65100; font-weight:600;">{{ assignment.due_date|default:"N/A" }}</span>
+            </div>
+            
+            <p style="white-space:pre-wrap; color:#555; line-height:1.6;">{{ assignment.description }}</p>
+            
+            {% if assignment.attachment %}
+            <div style="margin-top:30px;">
+                <strong>Instructions Attachment:</strong><br>
+                <a href="{{ assignment.attachment.url }}" target="_blank" style="color:#667eea; text-decoration:none; display:flex; align-items:center; gap:5px; margin-top:5px;">
+                    📎 View Materials
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="submission-form">
+            <h3 style="margin-top:0;">Your Submission</h3>
+            
+            {% if submission and submission.grade %}
+                <div style="background:#e8f5e9; color:#2e7d32; padding:15px; border-radius:8px; margin-bottom:20px; font-weight:700; text-align:center;">
+                    ✅ Assignment Graded: {{ submission.grade }}
+                </div>
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Submission Text / Notes (Optional)</label>
+                    <textarea name="content" rows="6" placeholder="Write any notes about your submission here..." {% if submission.grade %}disabled{% endif %}>{{ submission.content|default:'' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Upload File (PDF/DOCS)</label>
+                    {% if submission.attachment %}
+                        <div style="font-size:12px; margin-bottom:10px; color:#27ae60;">
+                            Current file: <a href="{{ submission.attachment.url }}" target="_blank">View Current</a>
+                        </div>
+                    {% endif %}
+                    <input type="file" name="attachment" accept=".pdf,.doc,.docx" {% if submission.grade %}disabled{% endif %}>
+                </div>
+                
+                <button type="submit" class="btn-submit" {% if submission.grade %}disabled style="background:#bdc3c7; cursor:not-allowed;"{% endif %}>
+                    {% if submission %}📤 Update Submission{% else %}📤 Hand In{% endif %}
+                </button>
+            </form>
+            
+            {% if submission and submission.feedback %}
+                <div style="margin-top:25px; padding-top:20px; border-top:1px solid #f0f0f0;">
+                    <strong style="color:#2c3e50; font-size:14px;">Feedback:</strong>
+                    <div style="background:#f8f9fa; padding:15px; border-radius:8px; font-size:14px; margin-top:10px; color:#555;">
+                        {{ submission.feedback }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

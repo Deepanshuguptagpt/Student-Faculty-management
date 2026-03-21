@@ -113,7 +113,14 @@
         <!-- Create Assignment Form -->
         <div style="background: #F8FAFC; padding: 24px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #E2E8F0;">
             <h4 style="margin-top: 0; color: #1E3A8A; margin-bottom: 20px;">Create New Assignment</h4>
-            <form method="POST" action="/faculty/dashboard/">
+            
+            {% if error %}
+            <div style="background: #FEF2F2; color: #991B1B; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2;">
+                ⚠️ {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/faculty/dashboard/" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="create_assignment">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -123,7 +130,7 @@
                     </div>
                     <div>
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Due Date</label>
-                        <input type="date" name="due_date" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <input type="date" name="due_date" id="assignment-due-date" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
                     </div>
                     <div>
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Course *</label>
@@ -151,6 +158,11 @@
                             <option value="{{ y }}">{{ y }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Attachment (PDF/DOCS)</label>
+                        <input type="file" name="attachment" accept=".pdf,.doc,.docx" style="width: 100%; padding: 8px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <small style="color: #64748B; font-size: 11px;">Max size 5MB. PDF, Word documents only.</small>
                     </div>
                     <div style="grid-column: span 2;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Description / Instructions</label>
@@ -210,7 +222,8 @@
                     <th>Branch</th>
                     <th>Year</th>
                     <th>Due Date</th>
-                    <th>Posted On</th>
+                    <th>Submissions</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -221,7 +234,17 @@
                     <td><span style="background: #F3E8FF; color: #6B21A8; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.branch }}</span></td>
                     <td><span style="background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.year|default:"N/A" }}</span></td>
                     <td>{{ a.due_date|date:"M d, Y"|default:"No due date" }}</td>
-                    <td>{{ a.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        <span style="background: #E8F5E9; color: #2E7D32; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                            {{ a.submissions.count }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'faculty_assignment_detail' a.id %}" style="text-decoration: none; color: #4F46E5;">👁️ View</a>
+                        {% if a.attachment %}
+                        <a href="{{ a.attachment.url }}" target="_blank" style="margin-left:8px; text-decoration: none;">📎</a>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -318,6 +341,16 @@
                         this.setCustomValidity('');
                     }
                 });
+            }
+
+            // Set date constraints for assignment due date
+            const dueDateInput = document.getElementById('assignment-due-date');
+            if (dueDateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dueDateInput.setAttribute('min', today);
+                if (!dueDateInput.value) {
+                    dueDateInput.value = today;
+                }
             }
         });
     </script>

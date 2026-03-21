@@ -258,7 +258,7 @@
 
 <div class="create-card">
     <h3>Create New Assignment</h3>
-    <form method="POST" action="">
+    <form method="POST" action="" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="form-grid">
             <div class="form-group">
@@ -295,6 +295,10 @@
                     <option value="{{ y }}">{{ y }}</option>
                     {% endfor %}
                 </select>
+            </div>
+            <div class="form-group">
+                <label>Attachment (PDF/DOCS)</label>
+                <input type="file" name="attachment" accept=".pdf,.doc,.docx">
             </div>
             <div class="form-group form-group-full" style="grid-column: span 2;">
                 <label>Description / Instructions</label>
@@ -353,9 +357,9 @@
                 <th>Title</th>
                 <th>Course</th>
                 <th>Branch</th>
-                <th>Year</th>
                 <th>Due Date</th>
-                <th>Posted On</th>
+                <th>Submissions</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -364,9 +368,18 @@
                 <td><span class="assignment-title">{{ a.title }}</span></td>
                 <td><span class="badge badge-course">{{ a.course.code }}</span></td>
                 <td><span class="badge badge-branch">{{ a.branch }}</span></td>
-                <td><span class="badge badge-branch">{{ a.year|default:"N/A" }}</span></td>
                 <td><span class="badge badge-date">{{ a.due_date|default:"No due date" }}</span></td>
-                <td>{{ a.created_at|date:"M d, Y" }}</td>
+                <td>
+                    <span class="badge" style="background:#e8f5e9; color:#2e7d32;">
+                        {{ a.submissions.count }} Submissions
+                    </span>
+                </td>
+                <td>
+                    <a href="{% url 'faculty_assignment_detail' a.id %}" class="btn-filter" style="text-decoration:none; padding: 5px 10px; font-size: 12px;">👁️ View & Grade</a>
+                    {% if a.attachment %}
+                    <a href="{{ a.attachment.url }}" target="_blank" title="View Attachment" style="margin-left:5px;">📎</a>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

@@ -35,41 +35,34 @@ class Command(BaseCommand):
         log.students_analyzed = students.count()
         
         emails_sent = 0
-        overdue_by_section = {} # (branch, section) -> list of student data
-        
-        today = timezone.now().date()
+        pending_by_section = {} # (branch, section) -> list of student data
         
         for student in students:
-            # 3. Find overdue records for this student
-            overdue_records = FeeRecord.objects.filter(
+            # 3. Find pending/unpaid records for this student
+            # We include both 'Pending' and 'Overdue' as both represent unpaid fees
+            unpaid_records = FeeRecord.objects.filter(
                 student=student,
-                status__in=['Pending', 'Overdue'],
-                due_date__lt=today
+                status__in=['Pending', 'Overdue']
             )
             
-            if overdue_records.exists():
-                total_overdue = sum(record.remaining_amount for record in overdue_records)
+            if unpaid_records.exists():
+                total_unpaid = sum(record.remaining_amount for record in unpaid_records)
                 
-                # Create intervention
+                # Create intervention log entry
                 intervention = FeeIntervention.objects.create(
                     log=log,
                     student=student,
-                    amount_overdue=total_overdue
+                    amount_overdue=total_unpaid # This field label in model is 'overdue' but represents total unpaid
                 )
                 
-                # 4. Automated Notification to Student/Parent
-                target_email = student.user.email  # Sending to student's email as well
-                parent_email = student.parent_email
+                # 4. Automated Notification specifically to STUDENT as requested
+                student_email = student.user.email
                 
-                recipients = []
-                if target_email: recipients.append(target_email)
-                if parent_email: recipients.append(parent_email)
-                
-                if not recipients:
+                if not student_email:
                      intervention.save()
                      continue
                 
-                overdue_details = "\n".join([f"- {r.semester}: ₹{r.remaining_amount} (Due: {r.due_date})" for r in overdue_records])
+                unpaid_details = "\n".join([f"- {r.semester}: ₹{r.remaining_amount} {'(Pending)' if r.status == 'Pending' else '(Overdue)'}" for r in unpaid_records])
                 
                 email_body = f"""
 Dear {student.user.name},
@@ -78,25 +71,25 @@ Enrollment Number: {student.enrollment_number}
 Branch: {student.branch}
 Section: {student.section}
 
-Our records indicate that your fees for the following semesters are still outstanding:
+Our records indicate that your fees for the following semesters are still unpaid/pending:
 
-{overdue_details}
+{unpaid_details}
 
-Total Outstanding Amount: ₹{total_overdue}
+Total Outstanding Amount: ₹{total_unpaid}
 
-Kindly ensure the payment is made at the earliest to avoid any inconvenience. If you have already paid, please ignore this email or provide the transaction details to the accounts department.
+Kindly ensure the payment is made at the earliest. If you have already paid, please ignore this email or provide the transaction details to the accounts department.
 
-Best Regards,
-Accounts Department
+Regards,
+Fee Management Agent
 Indore Institute Management Portal
                 """
                 
                 try:
                     send_mail(
-                        'Urgent: Fee Payment Reminder',
+                        'Fee Payment Reminder - Indore Institute',
                         email_body,
                         'accounts@indoreinstitute.com',
-                        recipients,
+                        [student_email],
                         fail_silently=True,
                     )
                     intervention.notification_sent = True
@@ -104,64 +97,61 @@ Indore Institute Management Portal
                     intervention.save()
                     emails_sent += 1
                 except Exception as e:
-                    self.stdout.write(self.style.ERROR(f"Failed to send email to {recipients}: {str(e)}"))
+                    self.stdout.write(self.style.ERROR(f"Failed to send email to {student_email}: {str(e)}"))
 
                 # Add to section-wise report data for coordinator
                 key = (student.branch, student.section)
-                if key not in overdue_by_section:
-                    overdue_by_section[key] = []
+                if key not in pending_by_section:
+                    pending_by_section[key] = []
                     
-                overdue_by_section[key].append({
+                pending_by_section[key].append({
                     'Name': student.user.name,
                     'Enrollment': student.enrollment_number,
                     'Branch': student.branch,
                     'Section': student.section,
-                    'Overdue Amount': float(total_overdue),
-                    'Details': overdue_details.replace('\n', ' | '),
-                    'Student Email': student.user.email,
-                    'Parent Email': student.parent_email
+                    'Unpaid Amount': float(total_unpaid),
+                    'Fee Details': unpaid_details.replace('\n', ' | '),
+                    'Email': student.user.email
                 })
 
-        # 5. Send Section-Specific Reports to Coordinators
-        total_overdue_count = 0
-        for (branch, section), students_list in overdue_by_section.items():
-            total_overdue_count += len(students_list)
+        # 5. Send Section-Specific Reports to Coordinators with Excel Attachment
+        total_pending_count = 0
+        for (branch, section), students_list in pending_by_section.items():
+            total_pending_count += len(students_list)
             
-            # Find coordinator
+            # Find coordinator for this specific section
             coord = SectionCoordinator.objects.filter(branch=branch, section=section).first()
             if not coord:
-                # If no coordinator, we skip for this section or could send to admin
-                # The user said "coordinator will recieve the list... otherwise not"
                 continue
                 
             coord_name = coord.faculty.user.name
             coord_email = coord.faculty.user.email
             
-            # 5a. Generate Excel Attachment
+            # 5a. Generate Excel Attachment in memory
             df = pd.DataFrame(students_list)
             excel_buffer = BytesIO()
             with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name='Unpaid Fees Students')
+                df.to_excel(writer, index=False, sheet_name='Pending Fee Students')
             excel_buffer.seek(0)
             
-            # 5b. Generate AI Insights (Optional)
-            section_prompt = f"Summarize the fee status for {section} of {branch}. {len(students_list)} students have unpaid fees totaling a significant amount. Provide a one-sentence nudge for the coordinator {coord_name}."
-            section_insight = generate_ollama_insight(section_prompt)
+            # 5b. Optional AI Insight for Coordinator
+            prompt = f"Summarize pending fees for {section} of {branch}. {len(students_list)} students have unpaid fees. Give a short action nudge for coordinator {coord_name}."
+            insight = generate_ollama_insight(prompt)
             
             # 5c. Send Email with Attachment
             email_body = f"""
 Dear {coord_name},
 
-This is the weekly fee status report for your section: {branch} - {section}.
+Attached is the list of students in your section ({branch} - {section}) who have pending fee dues.
 
 Summary:
-- Total Students with Overdue Fees: {len(students_list)}
-- AI Nudge: {section_insight}
+- Students with Pending Fees: {len(students_list)}
+- Action Nudge: {insight}
 
-Please find attached the list of students who have not paid their fees even after the last date of submission. Kindly follow up with them to ensure timely clearance of dues.
+Kindly follow up with these students to ensure timely fee clearance.
 
 Regards,
-Fee Management Agent
+Accounts Department
             """
             
             try:
@@ -171,17 +161,17 @@ Fee Management Agent
                     from_email='accounts@indoreinstitute.com',
                     to=[coord_email],
                 )
-                email.attach(f'Overdue_Fees_{section}.xlsx', excel_buffer.getvalue(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                email.attach(f'Pending_Fees_{section}_{branch}.xlsx', excel_buffer.getvalue(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
                 email.send(fail_silently=True)
                 log.reports_generated += 1
-                self.stdout.write(self.style.SUCCESS(f"Sent fee report for {section} to {coord_email}"))
+                self.stdout.write(self.style.SUCCESS(f"Sent excel report for {section} to coordinator {coord_email}"))
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Failed to send report for {section}: {str(e)}"))
 
-        # 6. Global AI Insights
-        global_prompt = f"Fee monitoring complete. {total_overdue_count} students have overdue fees. Provide a summary insight."
+        # 6. Global AI Insight and Final Log
+        global_prompt = f"Fee audit complete. Found {total_pending_count} students with pending dues. Summarize the situation."
         log.summary_insight = generate_ollama_insight(global_prompt)
-        log.overdue_students = total_overdue_count
+        log.overdue_students = total_pending_count
         log.emails_sent = emails_sent
         log.save()
         
