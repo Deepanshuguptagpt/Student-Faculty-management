@@ -357,7 +357,29 @@
 
     <!-- Analytics Tab -->
     <div id="analytics-tab" class="tab-content {% if active_tab == 'analytics' %}active{% endif %}">
-        <h3>Student Analytics</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h3 style="margin: 0;">Performance Analytics</h3>
+        </div>
+
+        <!-- Charts Row -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 30px;">
+            <div class="card" style="margin-bottom: 0; background: #F8FAFC; border: 1px solid #E2E8F0;">
+                <h4 style="color: #1E3A8A; margin-bottom: 15px;">Assignment Submission Status</h4>
+                <div style="height: 300px;">
+                    <canvas id="assignmentSubChart"></canvas>
+                </div>
+                <p style="font-size: 12px; color: #64748B; text-align: center; margin-top: 10px;">Showing top 5 recent assignments</p>
+            </div>
+            
+            <div class="card" style="margin-bottom: 0; background: #F8FAFC; border: 1px solid #E2E8F0;">
+                <h4 style="color: #1E3A8A; margin-bottom: 15px;">Average Course Attendance</h4>
+                <div style="height: 300px;">
+                    <canvas id="courseAttendanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <h4 style="margin-bottom: 15px; color: #1E3A8A;">Detailed Student Analytics</h4>
         {% if analytics_data %}
         {% for data in analytics_data %}
         <div style="margin-bottom: 30px; border: 1px solid #E2E8F0; padding: 20px; border-radius: 12px; background: #F8FAFC;">
@@ -510,4 +532,75 @@ function switchTab(tabName) {
 }
 </script>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Assignment Submission Status Chart (Merged view)
+        const assignData = {{ assignment_stats_json|safe }};
+        const ctxAssign = document.getElementById('assignmentSubChart').getContext('2d');
+        new Chart(ctxAssign, {
+            type: 'bar',
+            data: {
+                labels: assignData.labels,
+                datasets: [
+                    {
+                        label: 'Submitted',
+                        data: assignData.submitted,
+                        backgroundColor: '#10B981',
+                        borderRadius: 5
+                    },
+                    {
+                        label: 'Not Submitted',
+                        data: assignData.total.map((t, i) => t - assignData.submitted[i]),
+                        backgroundColor: '#EF4444',
+                        borderRadius: 5
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Course Attendance Analytics Chart
+        const attendData = {{ attendance_stats_json|safe }};
+        const ctxAttend = document.getElementById('courseAttendanceChart').getContext('2d');
+        new Chart(ctxAttend, {
+            type: 'bar',
+            data: {
+                labels: attendData.labels,
+                datasets: [{
+                    label: 'Avg Attendance %',
+                    data: attendData.values,
+                    backgroundColor: '#4F46E5',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Percentage (%)' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

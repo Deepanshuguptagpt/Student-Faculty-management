@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+import json
 from authentication.models import User
 from backend.student.models import StudentProfile, FeeRecord, BRANCH_CHOICES, COURSE_CHOICES, SEMESTER_CHOICES, FeeMonitoringLog
 from backend.faculty.models import FacultyProfile
@@ -84,7 +85,19 @@ def admin_dashboard(request):
         'selected_course': course_filter,
         'selected_section': section_filter,
         'search_query': search_query,
-        'active_tab': active_tab
+        'active_tab': active_tab,
+        'branch_data_json': json.dumps({
+            'labels': [b[0] for b in BRANCH_CHOICES],
+            'values': [StudentProfile.objects.filter(branch=b[0]).count() for b in BRANCH_CHOICES]
+        }),
+        'fee_stats_json': json.dumps({
+            'labels': ['Paid', 'Pending', 'Overdue'],
+            'values': [
+                FeeRecord.objects.filter(status='Paid').count(),
+                FeeRecord.objects.filter(status='Pending').count(),
+                FeeRecord.objects.filter(status='Overdue').count()
+            ]
+        })
     }
     return render(request, "dashboards/admin/overview_new.html", context)
 

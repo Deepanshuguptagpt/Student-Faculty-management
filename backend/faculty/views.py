@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+import json
 from django.contrib.auth.decorators import login_required
 from .models import FacultyProfile, FacultyCourseAssignment, Department
 from backend.student.models import Attendance, Course, Enrollment, StudentProfile, AttendanceMonitoringLog, BRANCH_CHOICES
@@ -148,6 +149,19 @@ def faculty_dashboard(request):
             'selected_course': course_filter,
             'active_tab': active_tab,
             'latest_monitoring': latest_monitoring,
+            'assignment_stats_json': json.dumps({
+                'labels': [a.title[:20] + '...' if len(a.title) > 20 else a.title for a in assignment_list[:5]],
+                'submitted': [a.submissions.count() for a in assignment_list[:5]],
+                'total': [Enrollment.objects.filter(course=a.course).count() for a in assignment_list[:5]]
+            }),
+            'attendance_stats_json': json.dumps({
+                'labels': [d['course'].code for d in analytics_data],
+                'values': [
+                    (sum(s['attendance_percent'] for s in d['student_stats']) / len(d['student_stats'])) 
+                    if d['student_stats'] else 0 
+                    for d in analytics_data
+                ]
+            })
         }
         return render(request, "dashboards/faculty/overview_new.html", context)
     except Exception as e:

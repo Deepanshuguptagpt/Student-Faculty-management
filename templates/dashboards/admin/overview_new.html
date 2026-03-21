@@ -27,6 +27,22 @@
     </div>
 </div>
 
+<!-- Analytics Visualization Section -->
+<div class="stats-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
+    <div class="card" style="margin-bottom: 0;">
+        <h3>Student Distribution by Branch</h3>
+        <div style="height: 300px; display: flex; align-items: center; justify-content: center;">
+            <canvas id="branchChart"></canvas>
+        </div>
+    </div>
+    <div class="card" style="margin-bottom: 0;">
+        <h3>Fee Collection Status</h3>
+        <div style="height: 300px; display: flex; align-items: center; justify-content: center;">
+            <canvas id="feeChart"></canvas>
+        </div>
+    </div>
+</div>
+
 <!-- Tabbed Content -->
 <div class="card">
     <div class="tab-nav">
@@ -265,4 +281,57 @@ function switchTab(tabName) {
 }
 </script>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Branch Distribution Chart
+        const branchData = {{ branch_data_json|safe }};
+        const ctxBranch = document.getElementById('branchChart').getContext('2d');
+        new Chart(ctxBranch, {
+            type: 'pie',
+            data: {
+                labels: branchData.labels,
+                datasets: [{
+                    data: branchData.values,
+                    backgroundColor: [
+                        '#4F46E5', '#10B981', '#F59E0B', '#EF4444', 
+                        '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Fee Status Chart
+        const feeData = {{ fee_stats_json|safe }};
+        const ctxFee = document.getElementById('feeChart').getContext('2d');
+        new Chart(ctxFee, {
+            type: 'doughnut',
+            data: {
+                labels: feeData.labels,
+                datasets: [{
+                    data: feeData.values,
+                    backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}
