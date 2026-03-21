@@ -65,7 +65,7 @@
 
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="font-size:13px; color:#e65100; font-weight:600;">
-                📅 Due: {{ a.due_date|default:"No due date" }}
+                📅 Due: {{ a.due_datetime|date:"M d, Y H:i"|default:"No due date" }}
             </div>
             <div>
                 {% if a.attachment %}

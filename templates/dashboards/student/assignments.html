@@ -216,7 +216,7 @@
             </div>
             <div class="meta-item">
                 <span>📅</span>
-                <span><strong>Due Date:</strong> {{ item.assignment.due_date|default:"No deadline" }}</span>
+                <span><strong>Due Date:</strong> {{ item.assignment.due_datetime|date:"M d, Y H:i"|default:"No deadline" }}</span>
             </div>
             <div class="meta-item">
                 <span>📊</span>

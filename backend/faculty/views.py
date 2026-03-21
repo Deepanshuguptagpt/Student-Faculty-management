@@ -27,13 +27,20 @@ def faculty_dashboard(request):
             course_id = request.POST.get('course_id')
             branch = request.POST.get('branch')
             year = request.POST.get('year')
-            due_date = request.POST.get('due_date')
             attachment = request.FILES.get('attachment')
             
-            # Validation: Due date cannot be in the past
-            if due_date:
-                selected_date = datetime.datetime.strptime(due_date, '%Y-%m-%d').date()
-                if selected_date < datetime.date.today():
+            due_datetime = request.POST.get('due_date') # Keep POST name as 'due_date' for form compatibility
+            selected_dt = None # Initialize selected_dt
+            if due_datetime:
+                # Handle both date only and datetime strings if possible, 
+                # but usually it's %Y-%m-%d from HTML date input.
+                # We'll default to end of day if only date is provided.
+                try:
+                    selected_dt = datetime.datetime.strptime(due_datetime, '%Y-%m-%dT%H:%M')
+                except ValueError:
+                    selected_dt = datetime.datetime.strptime(due_datetime, '%Y-%m-%d')
+                    selected_dt = selected_dt.replace(hour=23, minute=59, second=59)
+                if selected_dt.date() < datetime.date.today():
                     return render(request, "dashboards/faculty/overview_new.html", {
                         "profile": profile,
                         "error": "Due date cannot be in the past.",
@@ -48,7 +55,7 @@ def faculty_dashboard(request):
                     course_id=course_id,
                     branch=branch,
                     year=year,
-                    due_date=due_date if due_date else None,
+                    due_datetime=selected_dt if due_datetime else None,
                     attachment=attachment
                 )
             return redirect('/faculty/dashboard/?tab=assignments')
@@ -338,7 +345,14 @@ def faculty_assignments(request):
         course_id = request.POST.get('course_id')
         branch = request.POST.get('branch')
         year = request.POST.get('year')
-        due_date = request.POST.get('due_date')
+        due_datetime_raw = request.POST.get('due_date')
+        selected_dt = None
+        if due_datetime_raw:
+            try:
+                selected_dt = datetime.datetime.strptime(due_datetime_raw, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                selected_dt = datetime.datetime.strptime(due_datetime_raw, '%Y-%m-%d')
+                selected_dt = selected_dt.replace(hour=23, minute=59, second=59)
         attachment = request.FILES.get('attachment')
         
         if title and course_id and branch:
@@ -350,7 +364,7 @@ def faculty_assignments(request):
                 course_id=course_id,
                 branch=branch,
                 year=year,
-                due_date=due_date if due_date else None,
+                due_datetime=selected_dt if due_datetime_raw else None,
                 attachment=attachment
             )
         return redirect('faculty_assignments')

@@ -52,7 +52,7 @@ class Assignment(models.Model):
     branch = models.CharField(max_length=100, choices=BRANCH_CHOICES)
     year = models.CharField(max_length=20, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    due_date = models.DateField(null=True, blank=True)
+    due_datetime = models.DateTimeField(null=True, blank=True, verbose_name="Due Date & Time")
     attachment = models.FileField(upload_to='assignments/materials/', null=True, blank=True, help_text="Upload instructions/notes in PDF or Word format")
 
     def __str__(self):
@@ -83,3 +83,23 @@ class SectionCoordinator(models.Model):
 
     def __str__(self):
         return f"{self.section} Coordinator: {self.faculty.user.name}"
+
+class AssignmentReminderLog(models.Model):
+    REMINDER_TYPES = [
+        ('50', '50% Duration'),
+        ('75', '75% Duration'),
+        ('90', '90% Duration'),
+        ('day_morning', 'Submission Day Morning'),
+        ('day_evening', 'Submission Day Evening'),
+        ('final', '3 Hours Before Deadline'),
+    ]
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='reminder_logs')
+    student = models.ForeignKey('student.StudentProfile', on_delete=models.CASCADE, related_name='assignment_reminders')
+    reminder_type = models.CharField(max_length=20, choices=REMINDER_TYPES)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('assignment', 'student', 'reminder_type')
+
+    def __str__(self):
+        return f"{self.reminder_type} reminder for {self.student.user.name} - {self.assignment.title}"

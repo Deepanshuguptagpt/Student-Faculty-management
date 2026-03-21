@@ -252,7 +252,7 @@
             </div>
             <div class="info-item">
                 <div class="info-label">Due Date</div>
-                <div class="info-value">{{ assignment.due_date|default:"No deadline" }}</div>
+                <div class="info-value">{{ assignment.due_datetime|date:"M d, Y H:i"|default:"No deadline" }}</div>
             </div>
             <div class="info-item">
                 <div class="info-label">Max Marks</div>

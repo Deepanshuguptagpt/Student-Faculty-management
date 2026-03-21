@@ -267,7 +267,7 @@
             </div>
             <div class="form-group">
                 <label>Due Date</label>
-                <input type="date" name="due_date">
+                <input type="datetime-local" name="due_date">
             </div>
             <div class="form-group">
                 <label>Course (Your Specializations) *</label>
@@ -368,7 +368,7 @@
                 <td><span class="assignment-title">{{ a.title }}</span></td>
                 <td><span class="badge badge-course">{{ a.course.code }}</span></td>
                 <td><span class="badge badge-branch">{{ a.branch }}</span></td>
-                <td><span class="badge badge-date">{{ a.due_date|default:"No due date" }}</span></td>
+                <td><span class="badge badge-date">{{ a.due_datetime|date:"M d, Y H:i"|default:"No due date" }}</span></td>
                 <td>
                     <span class="badge" style="background:#e8f5e9; color:#2e7d32;">
                         {{ a.submissions.count }} Submissions

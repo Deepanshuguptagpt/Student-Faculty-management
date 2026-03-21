@@ -130,7 +130,7 @@
                     </div>
                     <div>
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Due Date</label>
-                        <input type="date" name="due_date" id="assignment-due-date" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                        <input type="datetime-local" name="due_date" id="assignment-due-date" style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
                     </div>
                     <div>
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Course *</label>
@@ -233,7 +233,7 @@
                     <td><span style="background: #E0E7FF; color: #3730A3; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.course.code }}</span></td>
                     <td><span style="background: #F3E8FF; color: #6B21A8; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.branch }}</span></td>
                     <td><span style="background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.year|default:"N/A" }}</span></td>
-                    <td>{{ a.due_date|date:"M d, Y"|default:"No due date" }}</td>
+                    <td>{{ a.due_datetime|date:"M d, Y H:i"|default:"No due date" }}</td>
                     <td>
                         <span style="background: #E8F5E9; color: #2E7D32; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
                             {{ a.submissions.count }}

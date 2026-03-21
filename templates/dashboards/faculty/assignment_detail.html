@@ -132,7 +132,7 @@
         </div>
         <div class="info-item">
             <div class="info-label">Due Date</div>
-            <div class="info-value">{{ assignment.due_date|default:"N/A" }}</div>
+            <div class="info-value">{{ assignment.due_datetime|date:"M d, Y H:i"|default:"N/A" }}</div>
         </div>
         {% if assignment.attachment %}
         <div class="info-item">

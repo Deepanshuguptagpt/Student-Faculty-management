@@ -20,25 +20,28 @@ class FacultyConfig(AppConfig):
         
         while True:
             try:
+                from django.utils import timezone
+                # 1. Assignment Reminders (Check every run)
+                subprocess.Popen(['python', 'manage.py', 'assignment_reminder_agent'])
+
+                # 2. Attendance Agent (Check every 15 days)
                 from backend.student.models import AttendanceMonitoringLog
-                
                 latest = AttendanceMonitoringLog.objects.order_by('-date_performed').first()
-                should_run = False
+                should_run_attendance = False
                 
                 if not latest:
-                    should_run = True
+                    should_run_attendance = True
                 else:
-                    days_since = (datetime.now(timezone.utc) - latest.date_performed).days
+                    days_since = (timezone.now() - latest.date_performed).days
                     if days_since >= 15:
-                        should_run = True
+                        should_run_attendance = True
                 
-                if should_run:
-                    # Run the management command
+                if should_run_attendance:
                     subprocess.Popen(['python', 'manage.py', 'attendance_agent'])
                 
             except Exception as e:
-                # Silently catch errors in the background thread to avoid crashing the server
+                # Silently catch errors in background
                 pass
             
-            # Check once every 12 hours
-            time.sleep(12 * 3600)
+            # Check once every hour for reminders
+            time.sleep(3600)

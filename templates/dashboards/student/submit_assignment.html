@@ -74,7 +74,7 @@
         <div class="assignment-details">
             <h2 style="margin-top:0;">{{ assignment.title }}</h2>
             <div style="color:#7f8c8d; font-size:14px; margin-bottom:20px;">
-                {{ assignment.course.code }} | Due: <span style="color:#e65100; font-weight:600;">{{ assignment.due_date|default:"N/A" }}</span>
+                {{ assignment.course.code }} | Due: <span style="color:#e65100; font-weight:600;">{{ assignment.due_datetime|date:"M d, Y H:i"|default:"N/A" }}</span>
             </div>
             
             <p style="white-space:pre-wrap; color:#555; line-height:1.6;">{{ assignment.description }}</p>
