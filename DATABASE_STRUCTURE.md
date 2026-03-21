@@ -1,7 +1,7 @@
 # Database Structure & Management
 
 ## Overview
-This document describes the database architecture for the Student-Faculty Management System. The system uses Django ORM with SQLite as the database backend.
+This document describes the database architecture for Academiq. The system uses Django ORM with SQLite as the database backend.
 
 ---
 

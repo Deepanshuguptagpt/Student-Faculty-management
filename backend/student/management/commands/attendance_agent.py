@@ -91,7 +91,7 @@ Practical Attendance: {data['global_practical_pct']}%
 Kindly note that improvement in your attendance is mandatory to comply with academic regulations.
 
 Best Regards,
-Indore Institute Management Portal
+Academiq Management Portal
                 """
                 
                 try:
@@ -184,7 +184,7 @@ AI Insights for your section:
 Please find the attached Excel file for the complete list of at-risk students and their details.
 
 Regards,
-AI Attendance Agent
+Academiq AI Agent
             """
             
             try:

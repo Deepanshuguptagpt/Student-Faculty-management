@@ -137,10 +137,10 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Email Settings
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'backend.student.email_backend.UnverifiedEmailBackend'
 EMAIL_HOST = 'smtp.gmail.com' # Example
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'your-email@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'your-app-password')
-DEFAULT_FROM_EMAIL = f"Indore Institute Portal <{EMAIL_HOST_USER}>"
+DEFAULT_FROM_EMAIL = f"Academiq Portal <{EMAIL_HOST_USER}>"

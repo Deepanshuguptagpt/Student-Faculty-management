@@ -1,4 +1,4 @@
-# Student Faculty Management System
+# Academiq - Student Faculty Management System
 
 A Django-based student and faculty management portal with attendance tracking and course management.
 

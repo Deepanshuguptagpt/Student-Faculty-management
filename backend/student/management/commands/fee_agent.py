@@ -81,12 +81,12 @@ Kindly ensure the payment is made at the earliest. If you have already paid, ple
 
 Regards,
 Fee Management Agent
-Indore Institute Management Portal
+Academiq Management Portal
                 """
                 
                 try:
                     send_mail(
-                        'Fee Payment Reminder - Indore Institute',
+                        'Fee Payment Reminder - Academiq',
                         email_body,
                         'accounts@indoreinstitute.com',
                         [student_email],
