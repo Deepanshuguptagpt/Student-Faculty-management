@@ -16,10 +16,18 @@ class Command(BaseCommand):
         now = timezone.now()
         self.stdout.write(f"Running Assignment Reminder Agent at {now}")
 
-        # 1. Get all assignments that are not yet due
+        # 1. Get all assignments that are NOT yet due
         active_assignments = Assignment.objects.filter(due_datetime__gt=now)
 
         for assignment in active_assignments:
+            # Safety check: skip if this assignment somehow slipped past the due date
+            # (e.g. agent ran slowly, or --force is being used)
+            if assignment.due_datetime and now >= assignment.due_datetime:
+                self.stdout.write(self.style.WARNING(
+                    f"Skipping '{assignment.title}' — due date has passed."
+                ))
+                continue
+
             # 2. Find students who SHOULD have submitted but haven't
             # These are students enrolled in the same course and branch
             enrolled_students = StudentProfile.objects.filter(
@@ -37,20 +45,35 @@ class Command(BaseCommand):
                 
                 if reminder_type:
                     self.send_reminder_email(assignment, student, reminder_type)
-                    # Log the reminder
-                    AssignmentReminderLog.objects.create(
+                    # Log the reminder — use get_or_create to be race-condition-safe
+                    # (if two agent runs overlap, the second silently skips instead of crashing)
+                    log_obj, created = AssignmentReminderLog.objects.get_or_create(
                         assignment=assignment,
                         student=student,
                         reminder_type=reminder_type
                     )
-                    self.stdout.write(self.style.SUCCESS(f"Sent {reminder_type} reminder to {student.user.email} for {assignment.title}"))
+                    if created:
+                        self.stdout.write(self.style.SUCCESS(
+                            f"Sent {reminder_type} reminder to {student.user.email} for {assignment.title}"
+                        ))
+                    else:
+                        self.stdout.write(self.style.WARNING(
+                            f"Duplicate skipped: {reminder_type} reminder to {student.user.email} for {assignment.title}"
+                        ))
+
 
     def get_due_reminder_type(self, assignment, student, now, force):
         """
         Calculates if a reminder is due based on the user's requirements.
+        Never sends alerts if the due date has already passed.
         """
         created_at = assignment.created_at
         due_at = assignment.due_datetime
+
+        # ── Hard stop: never send any alert after the deadline ──
+        if now >= due_at:
+            return None
+
         total_duration = due_at - created_at
         time_passed = now - created_at
         remaining_time = due_at - now
@@ -85,14 +108,16 @@ class Command(BaseCommand):
             if now.hour >= 18 and not already_sent('day_evening'):
                 return 'day_evening'
             
-            # 3 hours before deadline
+            # 3 hours before deadline (only if still before due date)
             if remaining_time <= datetime.timedelta(hours=3) and not already_sent('final'):
                 return 'final'
 
+        # --force: only allowed if deadline hasn't passed (already checked above)
         if force:
-            return '50' # Default for force test
+            return '50'  # Default for force test
 
         return None
+
 
     def send_reminder_email(self, assignment, student, reminder_type):
         subject = f"Reminder: Assignment '{assignment.title}' is due soon! - Academiq"

@@ -101,45 +101,73 @@ def student_course_assignments(request, course_id):
     profile = get_student_profile(request)
     course = Course.objects.get(id=course_id)
     from backend.faculty.models import Assignment, AssignmentSubmission
+    from django.utils import timezone
     assignments = Assignment.objects.filter(course=course, branch=profile.branch).order_by('-created_at')
-    
+
     # Enrich assignments with student's current submission status
     for a in assignments:
         a.my_submission = AssignmentSubmission.objects.filter(assignment=a, student=profile).first()
-        
+
     return render(request, "dashboards/student/course_assignments.html", {
         'profile': profile,
         'course': course,
-        'assignments': assignments
+        'assignments': assignments,
+        'now': timezone.now(),
     })
+
 
 def student_submit_assignment(request, assignment_id):
     profile = get_student_profile(request)
     from backend.faculty.models import Assignment, AssignmentSubmission
+    from django.utils import timezone
     assignment = Assignment.objects.get(id=assignment_id)
-    
+
     if request.method == 'POST':
+        # Guard 1: offline assignments cannot be submitted via portal
+        if assignment.submission_mode == 'offline':
+            return redirect('student_submit_assignment', assignment_id=assignment_id)
+
+        # Guard 2: block submission after due date
+        if assignment.due_datetime and timezone.now() > assignment.due_datetime:
+            return redirect('student_submit_assignment', assignment_id=assignment_id)
+
         content = request.POST.get('content')
         attachment = request.FILES.get('attachment')
-        
+
+        submission = AssignmentSubmission.objects.filter(assignment=assignment, student=profile).first()
+
+        # Guard 3: Document submission is mandatory for online
+        if not attachment and not (submission and submission.attachment):
+            return render(request, "dashboards/student/submit_assignment.html", {
+                'profile': profile,
+                'assignment': assignment,
+                'submission': submission,
+                'is_past_due': False,
+                'error': 'A document/PDF attachment is mandatory for your submission.'
+            })
+
+        defaults_dict = {'content': content}
+        if attachment:
+            defaults_dict['attachment'] = attachment
+
         AssignmentSubmission.objects.update_or_create(
             assignment=assignment,
             student=profile,
-            defaults={
-                'content': content,
-                'attachment': attachment
-            }
+            defaults=defaults_dict
         )
         return redirect('student_course_assignments', course_id=assignment.course.id)
-        
+
     submission = AssignmentSubmission.objects.filter(assignment=assignment, student=profile).first()
+    is_past_due = assignment.due_datetime and timezone.now() > assignment.due_datetime
     return render(request, "dashboards/student/submit_assignment.html", {
         'profile': profile,
         'assignment': assignment,
-        'submission': submission
+        'submission': submission,
+        'is_past_due': is_past_due,
     })
 
 def student_academics(request):
     profile = get_student_profile(request)
     records = AcademicRecord.objects.filter(student=profile)
     return render(request, "dashboards/student/academics.html", {'profile': profile, 'records': records})
+

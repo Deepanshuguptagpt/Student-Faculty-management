@@ -4,131 +4,239 @@
 
 {% block content %}
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+
     .submit-container {
         display: grid;
-        grid-template-columns: 1fr 400px;
-        gap: 30px;
-        max-width: 1000px;
+        grid-template-columns: 1fr 420px;
+        gap: 28px;
+        max-width: 1020px;
         margin: 0 auto;
     }
-    .assignment-details {
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    .back-btn {
+        color: #667eea; text-decoration: none; font-size: 14px; font-weight: 600;
+        margin-bottom: 20px; display: inline-flex; align-items: center; gap: 6px;
+        transition: gap .2s;
     }
-    .submission-form {
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    .back-btn:hover { gap: 10px; }
+
+    /* Assignment details panel */
+    .assignment-details {
+        background: white; padding: 28px; border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,.07);
+    }
+    .assignment-details h2 { margin: 0 0 8px; color: #1a1a2e; font-size: 22px; font-weight: 700; }
+    .meta-row { font-size: 13px; color: #888; margin-bottom: 18px; }
+    .meta-row span { color: #e65100; font-weight: 600; }
+    .description-box {
+        background: #f8f9fa; padding: 14px 16px; border-radius: 8px;
+        font-size: 14px; color: #555; line-height: 1.6; white-space: pre-wrap;
+        border-left: 3px solid #667eea; margin-bottom: 18px;
+    }
+
+    /* Mode badge prominently */
+    .mode-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 9px 18px; border-radius: 30px; font-size: 14px; font-weight: 700;
+        margin-bottom: 16px;
+    }
+    .mode-badge.online  { background: #e3f2fd; color: #1565c0; }
+    .mode-badge.offline { background: #fff3e0; color: #e65100; }
+
+    /* Submission panel */
+    .submission-panel {
+        background: white; padding: 28px; border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,.07);
         border-top: 5px solid #667eea;
     }
-    .form-group {
-        margin-bottom: 20px;
+    .submission-panel h3 { margin: 0 0 18px; color: #1a1a2e; font-size: 17px; font-weight: 700; }
+
+    /* Offline notice */
+    .offline-notice {
+        background: linear-gradient(135deg, #fff8e1, #fff3cd);
+        border: 2px solid #f39c12;
+        border-radius: 12px;
+        padding: 24px 22px;
+        text-align: center;
     }
+    .offline-notice .icon { font-size: 48px; margin-bottom: 12px; }
+    .offline-notice h4 { font-size: 17px; font-weight: 700; color: #e65100; margin: 0 0 10px; }
+    .offline-notice p { font-size: 14px; color: #555; line-height: 1.7; margin: 0; }
+    .offline-steps {
+        background: white; border-radius: 8px; padding: 16px 20px;
+        margin-top: 18px; text-align: left;
+    }
+    .offline-steps li { font-size: 13px; color: #444; margin-bottom: 8px; line-height: 1.5; }
+
+    /* Online form */
+    .form-group { margin-bottom: 18px; }
     .form-group label {
-        display: block;
-        font-weight: 600;
-        color: #555;
-        margin-bottom: 8px;
+        display: block; font-weight: 600; color: #555; margin-bottom: 7px; font-size: 13px;
     }
-    .form-group textarea, .form-group input {
-        width: 100%;
-        padding: 12px;
-        border: 2px solid #eef2f7;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: all 0.3s;
+    .form-group textarea, .form-group input[type=text], .form-group input[type=file] {
+        width: 100%; padding: 11px 13px; border: 2px solid #eef2f7;
+        border-radius: 8px; font-size: 14px; transition: border .25s; outline: none;
     }
-    .form-group textarea:focus, .form-group input:focus {
-        outline: none;
-        border-color: #667eea;
+    .form-group textarea:focus, .form-group input[type=text]:focus {
+        border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.1);
     }
     .btn-submit {
-        background: #667eea;
-        color: white;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 8px;
-        font-weight: 700;
-        cursor: pointer;
-        width: 100%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white; border: none; padding: 13px 28px; border-radius: 8px;
+        font-weight: 700; cursor: pointer; width: 100%; font-size: 15px;
+        transition: opacity .2s, transform .2s;
+        box-shadow: 0 4px 14px rgba(102,126,234,.35);
     }
-    .btn-submit:hover {
-        background: #5a6fd6;
+    .btn-submit:hover { opacity: .9; transform: translateY(-2px); }
+    .btn-submit:disabled { background: #bdc3c7; cursor: not-allowed; box-shadow: none; transform: none; }
+
+    .grade-box {
+        background: #e8f5e9; color: #2e7d32; padding: 14px 16px;
+        border-radius: 8px; font-weight: 700; text-align: center; font-size: 15px;
+        margin-bottom: 16px;
     }
-    .back-btn {
-        color: #7f8c8d;
-        text-decoration: none;
-        font-size: 14px;
-        margin-bottom: 20px;
-        display: inline-block;
+    .feedback-box {
+        background: #f8f9fa; border-left: 3px solid #f59e0b; border-radius: 8px;
+        padding: 14px 16px; font-size: 13px; color: #555; margin-top: 20px;
     }
+    .file-link {
+        display: inline-flex; align-items: center; gap: 5px;
+        color: #667eea; text-decoration: none; font-weight: 600; font-size: 13px;
+        background: #eef2ff; padding: 6px 12px; border-radius: 6px;
+        margin-top: 8px;
+    }
+    @media (max-width: 768px) { .submit-container { grid-template-columns: 1fr; } }
 </style>
 
-<div style="max-width:1000px; margin:0 auto; padding-top:20px;">
+<div style="max-width:1020px; margin:0 auto; padding-top:20px;">
     <a href="{% url 'student_course_assignments' assignment.course.id %}" class="back-btn">← Back to Assignments</a>
-    
+
     <div class="submit-container">
+        <!-- Assignment Details -->
         <div class="assignment-details">
-            <h2 style="margin-top:0;">{{ assignment.title }}</h2>
-            <div style="color:#7f8c8d; font-size:14px; margin-bottom:20px;">
-                {{ assignment.course.code }} | Due: <span style="color:#e65100; font-weight:600;">{{ assignment.due_datetime|date:"M d, Y H:i"|default:"N/A" }}</span>
+            <h2>{{ assignment.title }}</h2>
+            <div class="meta-row">
+                {{ assignment.course.code }} &mdash; {{ assignment.course.name }}
+                &nbsp;|&nbsp; Due: <span>{{ assignment.due_datetime|date:"M d, Y H:i"|default:"No deadline" }}</span>
+                &nbsp;|&nbsp; Posted: {{ assignment.created_at|date:"M d, Y" }}
             </div>
-            
-            <p style="white-space:pre-wrap; color:#555; line-height:1.6;">{{ assignment.description }}</p>
-            
+
+            <!-- Submission mode badge -->
+            {% if assignment.submission_mode == 'online' %}
+            <span class="mode-badge online">🌐 Online Submission &mdash; Submit via Portal</span>
+            {% else %}
+            <span class="mode-badge offline">📁 Offline Submission &mdash; Physical Hand-in</span>
+            {% endif %}
+
+            {% if assignment.description %}
+            <div class="description-box">{{ assignment.description }}</div>
+            {% endif %}
+
             {% if assignment.attachment %}
-            <div style="margin-top:30px;">
-                <strong>Instructions Attachment:</strong><br>
-                <a href="{{ assignment.attachment.url }}" target="_blank" style="color:#667eea; text-decoration:none; display:flex; align-items:center; gap:5px; margin-top:5px;">
-                    📎 View Materials
-                </a>
+            <div>
+                <strong style="font-size:13px; color:#555;">📎 Instruction Material:</strong><br>
+                <a href="{{ assignment.attachment.url }}" target="_blank" class="file-link">View / Download</a>
             </div>
             {% endif %}
         </div>
 
-        <div class="submission-form">
-            <h3 style="margin-top:0;">Your Submission</h3>
-            
+        <!-- Submission Panel -->
+        <div class="submission-panel">
+            <h3>Your Submission</h3>
+
             {% if submission and submission.grade %}
-                <div style="background:#e8f5e9; color:#2e7d32; padding:15px; border-radius:8px; margin-bottom:20px; font-weight:700; text-align:center;">
-                    ✅ Assignment Graded: {{ submission.grade }}
+            <div class="grade-box">✅ Graded: {{ submission.grade }}</div>
+            {% endif %}
+
+            {% if is_past_due and not submission.grade %}
+            <!-- ── DEADLINE PASSED NOTICE ── -->
+            <div class="offline-notice" style="border-color: #e74c3c; background: linear-gradient(135deg, #ffebee, #ffcdd2);">
+                <div class="icon">⏰</div>
+                <h4 style="color: #c62828;">Deadline Passed</h4>
+                <p>The deadline for this assignment has ended and it can no longer be accessed for submission. Please contact the faculty for further instructions.</p>
+            </div>
+
+            {% if submission %}
+            <div class="feedback-box" style="margin-top:20px;">
+                <strong>Your Previous Submission:</strong><br>
+                {% if submission.content %}<p style="margin:5px 0;">{{ submission.content }}</p>{% endif %}
+                {% if submission.attachment %}
+                <a href="{{ submission.attachment.url }}" target="_blank" class="file-link">📄 View File</a>
+                {% endif %}
+            </div>
+            {% if submission.feedback %}
+            <div class="feedback-box">
+                💬 <strong>Feedback:</strong> {{ submission.feedback }}
+            </div>
+            {% endif %}
+            {% endif %}
+
+            {% elif assignment.submission_mode == 'offline' %}
+            <!-- ── OFFLINE NOTICE ── -->
+            <div class="offline-notice">
+                <div class="icon">📁</div>
+                <h4>Physical Submission Required</h4>
+                <p>Your faculty has set this assignment for <strong>offline submission</strong>. You must hand in your work physically.</p>
+                <div class="offline-steps">
+                    <ol>
+                        <li>Complete your assignment on paper or print it out.</li>
+                        <li>Write your name, enrollment number, and course code on the first page.</li>
+                        <li>Submit it directly to <strong>{{ assignment.faculty.user.name }}</strong> before <strong>{{ assignment.due_datetime|date:"M d, Y H:i"|default:"the deadline" }}</strong>.</li>
+                    </ol>
                 </div>
+            </div>
+
+            {% if submission and submission.feedback %}
+            <div class="feedback-box" style="margin-top:20px;">
+                💬 <strong>Feedback:</strong> {{ submission.feedback }}
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- ── ONLINE FORM ── -->
+            {% if error %}
+            <div style="background:#ffebee; color:#c62828; padding:14px; border-radius:8px; border-left:4px solid #f44336; margin-bottom:18px; font-weight:600; font-size:14px;">
+                ⚠️ {{ error }}
+            </div>
             {% endif %}
 
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label>Submission Text / Notes (Optional)</label>
-                    <textarea name="content" rows="6" placeholder="Write any notes about your submission here..." {% if submission.grade %}disabled{% endif %}>{{ submission.content|default:'' }}</textarea>
+                    <label>Notes / Text Submission (Optional)</label>
+                    <textarea name="content" rows="6"
+                              placeholder="Write your submission notes here..."
+                              {% if submission.grade %}disabled{% endif %}>{{ submission.content|default:'' }}</textarea>
                 </div>
-                
+
                 <div class="form-group">
-                    <label>Upload File (PDF/DOCS)</label>
+                    <label>Upload File (PDF / DOCX) <span style="color:#e74c3c;">*</span></label>
                     {% if submission.attachment %}
-                        <div style="font-size:12px; margin-bottom:10px; color:#27ae60;">
-                            Current file: <a href="{{ submission.attachment.url }}" target="_blank">View Current</a>
-                        </div>
+                    <div style="margin-bottom:8px;">
+                        <a href="{{ submission.attachment.url }}" target="_blank" class="file-link">📄 View Current Submission</a>
+                        <span style="font-size:12px; color:#666; margin-left:8px;">(Upload a new file below to replace it)</span>
+                    </div>
                     {% endif %}
-                    <input type="file" name="attachment" accept=".pdf,.doc,.docx" {% if submission.grade %}disabled{% endif %}>
+                    <input type="file" name="attachment" accept=".pdf,.doc,.docx"
+                           {% if not submission.attachment %}required{% endif %}
+                           {% if submission.grade %}disabled{% endif %}>
                 </div>
-                
-                <button type="submit" class="btn-submit" {% if submission.grade %}disabled style="background:#bdc3c7; cursor:not-allowed;"{% endif %}>
+
+                <button type="submit" class="btn-submit"
+                        {% if submission.grade %}disabled{% endif %}>
                     {% if submission %}📤 Update Submission{% else %}📤 Hand In{% endif %}
                 </button>
             </form>
-            
+
             {% if submission and submission.feedback %}
-                <div style="margin-top:25px; padding-top:20px; border-top:1px solid #f0f0f0;">
-                    <strong style="color:#2c3e50; font-size:14px;">Feedback:</strong>
-                    <div style="background:#f8f9fa; padding:15px; border-radius:8px; font-size:14px; margin-top:10px; color:#555;">
-                        {{ submission.feedback }}
-                    </div>
-                </div>
+            <div class="feedback-box">
+                💬 <strong>Feedback:</strong> {{ submission.feedback }}
+            </div>
+            {% endif %}
             {% endif %}
         </div>
     </div>
 </div>
 {% endblock %}
+

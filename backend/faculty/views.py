@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect
 import json
+import datetime
 from django.contrib.auth.decorators import login_required
 from .models import FacultyProfile, FacultyCourseAssignment, Department
 from backend.student.models import Attendance, Course, Enrollment, StudentProfile, AttendanceMonitoringLog, BRANCH_CHOICES
 import subprocess
+
 
 def get_faculty_profile(request):
     faculty_email = request.session.get('faculty_email')
@@ -28,19 +30,24 @@ def faculty_dashboard(request):
             branch = request.POST.get('branch')
             year = request.POST.get('year')
             attachment = request.FILES.get('attachment')
-            
+            submission_mode = request.POST.get('submission_mode', 'online')
+
             due_datetime = request.POST.get('due_date') # Keep POST name as 'due_date' for form compatibility
             selected_dt = None # Initialize selected_dt
             if due_datetime:
+                from django.utils import timezone
                 # Handle both date only and datetime strings if possible, 
                 # but usually it's %Y-%m-%d from HTML date input.
                 # We'll default to end of day if only date is provided.
                 try:
-                    selected_dt = datetime.datetime.strptime(due_datetime, '%Y-%m-%dT%H:%M')
+                    naive_dt = datetime.datetime.strptime(due_datetime, '%Y-%m-%dT%H:%M')
                 except ValueError:
-                    selected_dt = datetime.datetime.strptime(due_datetime, '%Y-%m-%d')
-                    selected_dt = selected_dt.replace(hour=23, minute=59, second=59)
-                if selected_dt.date() < datetime.date.today():
+                    naive_dt = datetime.datetime.strptime(due_datetime, '%Y-%m-%d')
+                    naive_dt = naive_dt.replace(hour=23, minute=59, second=59)
+                
+                selected_dt = timezone.make_aware(naive_dt)
+
+                if selected_dt.date() < timezone.localdate():
                     return render(request, "dashboards/faculty/overview_new.html", {
                         "profile": profile,
                         "error": "Due date cannot be in the past.",
@@ -56,9 +63,11 @@ def faculty_dashboard(request):
                     branch=branch,
                     year=year,
                     due_datetime=selected_dt if due_datetime else None,
-                    attachment=attachment
+                    attachment=attachment,
+                    submission_mode=submission_mode,
                 )
             return redirect('/faculty/dashboard/?tab=assignments')
+
         
         assignments = FacultyCourseAssignment.objects.filter(faculty=profile)
         total_courses = assignments.count()
@@ -333,6 +342,8 @@ def faculty_analytics(request):
     }
     return render(request, "dashboards/faculty/analytics.html", context)
 
+
+
 def faculty_assignments(request):
     profile = get_faculty_profile(request)
     my_assigned_courses = FacultyCourseAssignment.objects.filter(faculty=profile).values_list('course_id', flat=True)
@@ -346,6 +357,7 @@ def faculty_assignments(request):
         branch = request.POST.get('branch')
         year = request.POST.get('year')
         due_datetime_raw = request.POST.get('due_date')
+        submission_mode = request.POST.get('submission_mode', 'online')
         selected_dt = None
         if due_datetime_raw:
             try:
@@ -365,44 +377,131 @@ def faculty_assignments(request):
                 branch=branch,
                 year=year,
                 due_datetime=selected_dt if due_datetime_raw else None,
-                attachment=attachment
+                attachment=attachment,
+                submission_mode=submission_mode,
             )
         return redirect('faculty_assignments')
+
         
-    from .models import Assignment
+    from .models import Assignment, AssignmentSubmission
+    from backend.student.models import Enrollment
+    from django.utils import timezone
     assignments = Assignment.objects.filter(faculty=profile).order_by('-created_at')
-    
+
     # Apply filters
     branch_filter = request.GET.get('branch')
     year_filter = request.GET.get('year')
     course_filter = request.GET.get('course')
-    
+
     if branch_filter:
         assignments = assignments.filter(branch=branch_filter)
     if year_filter:
         assignments = assignments.filter(year=year_filter)
     if course_filter:
         assignments = assignments.filter(course_id=course_filter)
-    
+
     year_choices = ['1st year', '2nd year', '3rd year', '4th year']
-    
+    now = timezone.now()
+
+    # --- Build real per-assignment analytics ---
+    assignments_data = []
+    total_submitted_all = 0
+    total_enrolled_all = 0
+    total_graded_all = 0
+    total_active = 0
+    total_overdue_count = 0
+
+    for a in assignments:
+        submitted = a.submissions.count()
+        total_enrolled = Enrollment.objects.filter(course=a.course).count()
+        pending = max(0, total_enrolled - submitted)
+        submission_pct = round((submitted / total_enrolled * 100), 1) if total_enrolled > 0 else 0
+        graded = a.submissions.exclude(grade__isnull=True).exclude(grade__exact='').count()
+        ungraded = submitted - graded
+
+        if a.due_datetime:
+            if now > a.due_datetime:
+                deadline_status = 'overdue'
+                total_overdue_count += 1
+            else:
+                deadline_status = 'active'
+                total_active += 1
+            on_time = a.submissions.filter(submitted_at__lte=a.due_datetime).count()
+            late = submitted - on_time
+        else:
+            deadline_status = 'no_deadline'
+            on_time = submitted
+            late = 0
+
+        total_submitted_all += submitted
+        total_enrolled_all += total_enrolled
+        total_graded_all += graded
+
+        assignments_data.append({
+            'assignment': a,
+            'submitted': submitted,
+            'total_enrolled': total_enrolled,
+            'pending': pending,
+            'submission_pct': submission_pct,
+            'graded': graded,
+            'ungraded': ungraded,
+            'deadline_status': deadline_status,
+            'on_time': on_time,
+            'late': late,
+        })
+
+    total_assignments = len(assignments_data)
+    total_pending_all = max(0, total_enrolled_all - total_submitted_all)
+    overall_submission_pct = round((total_submitted_all / total_enrolled_all * 100), 1) if total_enrolled_all > 0 else 0
+
+    # Chart: submitted vs pending vs graded for top 7 assignments
+    chart_labels = []
+    chart_submitted = []
+    chart_pending = []
+    chart_graded = []
+    for d in assignments_data[:7]:
+        title = d['assignment'].title
+        chart_labels.append(title[:22] + '\u2026' if len(title) > 22 else title)
+        chart_submitted.append(d['submitted'])
+        chart_pending.append(d['pending'])
+        chart_graded.append(d['graded'])
+
     return render(request, "dashboards/faculty/assignments.html", {
         'profile': profile,
         'courses': courses,
         'branches': [b[0] for b in BRANCH_CHOICES],
         'years': year_choices,
-        'assignments': assignments,
+        'assignments_data': assignments_data,
+        'assignments': [d['assignment'] for d in assignments_data],
         'selected_branch': branch_filter,
         'selected_year': year_filter,
-        'selected_course': course_filter
+        'selected_course': course_filter,
+        # Summary stat cards
+        'total_assignments': total_assignments,
+        'total_submitted_all': total_submitted_all,
+        'total_enrolled_all': total_enrolled_all,
+        'total_pending_all': total_pending_all,
+        'total_graded_all': total_graded_all,
+        'total_active': total_active,
+        'total_overdue_count': total_overdue_count,
+        'overall_submission_pct': overall_submission_pct,
+        # Chart JSON
+        'chart_labels_json': json.dumps(chart_labels),
+        'chart_submitted_json': json.dumps(chart_submitted),
+        'chart_pending_json': json.dumps(chart_pending),
+        'chart_graded_json': json.dumps(chart_graded),
     })
 
 def faculty_assignment_detail(request, assignment_id):
     profile = get_faculty_profile(request)
     from .models import Assignment, AssignmentSubmission
+    from backend.student.models import Enrollment
+    from django.utils import timezone
+    from collections import defaultdict
+
     assignment = Assignment.objects.get(id=assignment_id, faculty=profile)
-    submissions = AssignmentSubmission.objects.filter(assignment=assignment).select_related('student__user')
-    
+    submissions = AssignmentSubmission.objects.filter(assignment=assignment).select_related('student__user').order_by('submitted_at')
+
     if request.method == 'POST' and request.POST.get('action') == 'grade':
         submission_id = request.POST.get('submission_id')
         grade = request.POST.get('grade')
@@ -412,9 +511,56 @@ def faculty_assignment_detail(request, assignment_id):
         sub.feedback = feedback
         sub.save()
         return redirect('faculty_assignment_detail', assignment_id=assignment_id)
-        
+
+    now = timezone.now()
+    total_enrolled = Enrollment.objects.filter(course=assignment.course).count()
+    submitted_count = submissions.count()
+    pending_count = max(0, total_enrolled - submitted_count)
+    submission_pct = round((submitted_count / total_enrolled * 100), 1) if total_enrolled > 0 else 0
+
+    graded_count = submissions.exclude(grade__isnull=True).exclude(grade__exact='').count()
+    ungraded_count = submitted_count - graded_count
+
+    # On-time vs late
+    if assignment.due_datetime:
+        on_time_count = submissions.filter(submitted_at__lte=assignment.due_datetime).count()
+        late_count = submitted_count - on_time_count
+        is_overdue = now > assignment.due_datetime
+    else:
+        on_time_count = submitted_count
+        late_count = 0
+        is_overdue = False
+
+    # Grade distribution (letter/numeric grouped)
+    grade_dist = defaultdict(int)
+    for sub in submissions:
+        g = (sub.grade or 'Ungraded').strip()
+        grade_dist[g] += 1
+    grade_dist = dict(grade_dist)
+
+    # Submission timeline: count per day
+    timeline = defaultdict(int)
+    for sub in submissions:
+        day_key = sub.submitted_at.strftime('%b %d')
+        timeline[day_key] += 1
+    timeline_labels = list(timeline.keys())
+    timeline_values = list(timeline.values())
+
     return render(request, "dashboards/faculty/assignment_detail.html", {
         'profile': profile,
         'assignment': assignment,
-        'submissions': submissions
+        'submissions': submissions,
+        # Analytics
+        'submitted_count': submitted_count,
+        'total_enrolled': total_enrolled,
+        'pending_count': pending_count,
+        'submission_pct': submission_pct,
+        'graded_count': graded_count,
+        'ungraded_count': ungraded_count,
+        'on_time_count': on_time_count,
+        'late_count': late_count,
+        'is_overdue': is_overdue,
+        'grade_dist_json': json.dumps(grade_dist),
+        'timeline_labels_json': json.dumps(timeline_labels),
+        'timeline_values_json': json.dumps(timeline_values),
     })

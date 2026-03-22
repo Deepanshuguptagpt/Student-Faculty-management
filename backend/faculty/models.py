@@ -45,6 +45,10 @@ class FacultyCourseAssignment(models.Model):
         return f"{self.faculty.user.name} - Specializes in {self.course.code} ({self.semester})"
 
 class Assignment(models.Model):
+    SUBMISSION_MODE_CHOICES = [
+        ('online', 'Online (via Portal)'),
+        ('offline', 'Offline (Physical Submission)'),
+    ]
     title = models.CharField(max_length=250)
     description = models.TextField(null=True, blank=True)
     faculty = models.ForeignKey(FacultyProfile, on_delete=models.CASCADE, related_name='given_assignments')
@@ -54,6 +58,7 @@ class Assignment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     due_datetime = models.DateTimeField(null=True, blank=True, verbose_name="Due Date & Time")
     attachment = models.FileField(upload_to='assignments/materials/', null=True, blank=True, help_text="Upload instructions/notes in PDF or Word format")
+    submission_mode = models.CharField(max_length=10, choices=SUBMISSION_MODE_CHOICES, default='online', verbose_name="Submission Mode")
 
     def __str__(self):
         return self.title

@@ -4,92 +4,147 @@
 
 {% block content %}
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+
     .course-header {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        margin-bottom: 25px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white; padding: 24px 28px; border-radius: 14px;
+        margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;
+        box-shadow: 0 6px 20px rgba(102,126,234,.3);
     }
+    .course-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
+    .course-header p  { margin: 5px 0 0; opacity: .85; font-size: 14px; }
+    .back-link { color: rgba(255,255,255,.9); text-decoration: none; font-weight: 600; font-size: 14px;
+                 display: inline-flex; align-items: center; gap: 6px; transition: gap .2s; }
+    .back-link:hover { gap: 10px; }
+
     .assignment-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border-left: 5px solid #667eea;
-        transition: transform 0.3s;
+        background: white; border-radius: 12px; padding: 22px 24px;
+        margin-bottom: 18px; box-shadow: 0 2px 12px rgba(0,0,0,.07);
+        border-left: 5px solid #667eea; transition: transform .2s, box-shadow .2s;
     }
-    .assignment-card:hover {
-        transform: translateY(-2px);
+    .assignment-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+    .assignment-card.overdue  { border-left-color: #e74c3c; }
+    .assignment-card.submitted { border-left-color: #2ecc71; }
+    .assignment-card.offline  { border-left-color: #f39c12; }
+
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .a-title  { font-size: 17px; font-weight: 700; color: #1a1a2e; margin: 0; }
+    .a-posted { font-size: 12px; color: #aaa; margin-top: 3px; }
+
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-submitted { background: #e8f5e9; color: #2e7d32; }
+    .badge-pending   { background: #fff8e1; color: #e65100; }
+    .badge-overdue   { background: #ffebee; color: #c62828; }
+    .badge-online    { background: #e3f2fd; color: #1565c0; }
+    .badge-offline   { background: #fff3e0; color: #e65100; }
+
+    .card-meta { display: flex; gap: 18px; flex-wrap: wrap; margin: 12px 0; font-size: 13px; color: #666; }
+    .card-meta span { display: flex; align-items: center; gap: 5px; }
+
+    .description-text { font-size: 13px; color: #666; line-height: 1.5; margin-bottom: 16px; }
+
+    .card-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white; padding: 9px 20px; border-radius: 8px; text-decoration: none;
+        font-weight: 700; font-size: 13px;
+        box-shadow: 0 4px 12px rgba(102,126,234,.3); transition: opacity .2s, transform .2s;
+        display: inline-block;
     }
-    .status-badge {
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
+    .btn-primary:hover { opacity: .9; transform: translateY(-2px); }
+    .btn-disabled {
+        background: #ecf0f1; color: #aaa; padding: 9px 20px; border-radius: 8px;
+        font-weight: 700; font-size: 13px; cursor: not-allowed; display: inline-block;
     }
-    .status-pending { background: #fff3e0; color: #e65100; }
-    .status-submitted { background: #e8f5e9; color: #2e7d32; }
+    .btn-offline {
+        background: #fff3e0; color: #e65100; padding: 9px 20px; border-radius: 8px;
+        font-weight: 700; font-size: 13px; border: 2px solid #f39c12; display: inline-block;
+    }
+    .grade-box {
+        background: #f0f4ff; border-radius: 8px; padding: 10px 14px; font-size: 13px;
+    }
+    .no-assignments { text-align:center; padding:80px 20px; color:#aaa; }
 </style>
 
 <div class="course-header">
     <div>
-        <h2 style="margin:0;">Assignments for {{ course.name }}</h2>
-        <p style="margin:5px 0 0; color:#7f8c8d;">{{ course.code }} | Branch: {{ profile.branch }}</p>
+        <h2>📚 {{ course.name }}</h2>
+        <p>{{ course.code }} &nbsp;|&nbsp; Branch: {{ profile.branch }}</p>
     </div>
-    <a href="{% url 'student_courses' %}" style="color:#667eea; text-decoration:none; font-weight:600;">← All Courses</a>
+    <a href="{% url 'student_courses' %}" class="back-link">← All Courses</a>
 </div>
 
 {% if assignments %}
     {% for a in assignments %}
-    <div class="assignment-card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+    {% with now_overdue=a.due_datetime %}
+    <div class="assignment-card {% if a.my_submission %}submitted{% elif a.submission_mode == 'offline' %}offline{% endif %}">
+        <div class="card-top">
             <div>
-                <h3 style="margin:0; color:#2c3e50;">{{ a.title }}</h3>
-                <small style="color:#95a5a6;">Posted on {{ a.created_at|date:"M d, Y" }}</small>
+                <p class="a-title">{{ a.title }}</p>
+                <p class="a-posted">Posted {{ a.created_at|date:"M d, Y" }} by {{ a.faculty.user.name }}</p>
             </div>
-            {% if a.my_submission %}
-                <span class="status-badge status-submitted">✅ Handed In</span>
-            {% else %}
-                <span class="status-badge status-pending">🕒 Assigned</span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                <!-- Submission mode badge -->
+                {% if a.submission_mode == 'offline' %}
+                <span class="badge badge-offline">📁 Offline</span>
+                {% else %}
+                <span class="badge badge-online">🌐 Online</span>
+                {% endif %}
+                <!-- Status badge -->
+                {% if a.my_submission %}
+                <span class="badge badge-submitted">✅ Submitted</span>
+                {% elif a.due_datetime and a.due_datetime < now %}
+                <span class="badge badge-overdue">⚠️ Overdue</span>
+                {% else %}
+                <span class="badge badge-pending">⏳ Pending</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card-meta">
+            <span>📅 <strong>Due:</strong> {{ a.due_datetime|date:"M d, Y H:i"|default:"No deadline" }}</span>
+            {% if a.attachment %}<span>📎 <a href="{{ a.attachment.url }}" target="_blank" style="color:#667eea; font-weight:600;">View Material</a></span>{% endif %}
+        </div>
+
+        {% if a.description %}
+        <p class="description-text">{{ a.description|truncatewords:40 }}</p>
+        {% endif %}
+
+        <div class="card-actions">
+            <!-- Action buttons -->
+            <div>
+                {% if a.submission_mode == 'offline' %}
+                    <span class="btn-offline">📁 Submit Physically to Faculty</span>
+                {% elif a.my_submission %}
+                    <a href="{% url 'student_submit_assignment' a.id %}" class="btn-primary">👁️ View / Edit Submission</a>
+                {% elif a.due_datetime and a.due_datetime < now %}
+                    <span class="btn-disabled">🔒 Submissions Closed</span>
+                {% else %}
+                    <a href="{% url 'student_submit_assignment' a.id %}" class="btn-primary">✏️ Submit Now</a>
+                {% endif %}
+            </div>
+
+            <!-- Grade info if available -->
+            {% if a.my_submission and a.my_submission.grade %}
+            <div class="grade-box">
+                🏅 <strong>Grade:</strong> <span style="color:#27ae60; font-weight:700;">{{ a.my_submission.grade }}</span>
+                {% if a.my_submission.feedback %}
+                &nbsp;|&nbsp; 💬 {{ a.my_submission.feedback }}
+                {% endif %}
+            </div>
             {% endif %}
         </div>
-
-        <div style="margin-bottom:15px; color:#555;">
-            {{ a.description|truncatewords:30 }}
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-size:13px; color:#e65100; font-weight:600;">
-                📅 Due: {{ a.due_datetime|date:"M d, Y H:i"|default:"No due date" }}
-            </div>
-            <div>
-                {% if a.attachment %}
-                    <a href="{{ a.attachment.url }}" target="_blank" style="margin-right:15px; color:#667eea; text-decoration:none; font-size:14px;">📎 Materials</a>
-                {% endif %}
-                <a href="{% url 'student_submit_assignment' a.id %}" class="btn" style="text-decoration:none; background:#667eea; color:white; padding:8px 20px; border-radius:6px; font-weight:600;">
-                    {% if a.my_submission %}👁️ View / Edit Submission{% else %}✏️ Submit Now{% endif %}
-                </a>
-            </div>
-        </div>
-        
-        {% if a.my_submission and a.my_submission.grade %}
-            <div style="margin-top:15px; background:#f0f4ff; padding:10px; border-radius:6px; font-size:14px;">
-                <strong>Grade:</strong> <span style="color:#27ae60; font-weight:700;">{{ a.my_submission.grade }}</span>
-                {% if a.my_submission.feedback %}
-                <br><strong>Feedback:</strong> {{ a.my_submission.feedback }}
-                {% endif %}
-            </div>
-        {% endif %}
     </div>
+    {% endwith %}
     {% endfor %}
 {% else %}
-    <div style="text-align:center; padding:100px; color:#95a5a6;">
+    <div class="no-assignments">
+        <div style="font-size:56px; margin-bottom:16px;">📭</div>
+        <h3>No Assignments Yet</h3>
         <p>No assignments found for this course and branch.</p>
     </div>
 {% endif %}
 {% endblock %}
+

@@ -1,205 +1,471 @@
 {% extends "dashboards/faculty/base_new.html" %}
-
-{% block title %}Assignment Submissions - {{ assignment.title }}{% endblock %}
+{% block title %}{{ assignment.title }} – Submissions{% endblock %}
 
 {% block content %}
 <style>
-    .detail-container {
-        display: grid;
-        grid-template-columns: 350px 1fr;
-        gap: 25px;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+
+    /* Back button */
+    .back-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        color: #667eea; text-decoration: none; font-size: 14px; font-weight: 600;
+        margin-bottom: 20px;
+        transition: gap .2s;
     }
+    .back-link:hover { gap: 10px; }
+
+    /* ── Stat bar ── */
+    .anal-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .anal-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 18px 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,.07);
+        border-top: 4px solid transparent;
+        transition: transform .2s, box-shadow .2s;
+    }
+    .anal-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+    .anal-card.blue   { border-color: #3498db; }
+    .anal-card.green  { border-color: #2ecc71; }
+    .anal-card.red    { border-color: #e74c3c; }
+    .anal-card.orange { border-color: #f39c12; }
+    .anal-card.purple { border-color: #9b59b6; }
+    .anal-card.teal   { border-color: #1abc9c; }
+    .anal-label { font-size: 11px; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .anal-value { font-size: 28px; font-weight: 700; color: #1a1a2e; line-height: 1.1; }
+    .anal-sub   { font-size: 11px; color: #bbb; margin-top: 4px; }
+
+    /* ── Progress ring ── */
+    .ring-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    .ring-center { position: absolute; text-align: center; }
+    .ring-pct  { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+    .ring-desc { font-size: 11px; color: #999; }
+
+    /* ── Charts grid ── */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+    .chart-box {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px 22px;
+        box-shadow: 0 2px 12px rgba(0,0,0,.07);
+        display: flex;
+        flex-direction: column;
+    }
+    .chart-box h4 {
+        margin: 0 0 14px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #2c3e50;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+    }
+
+    /* ── Detail 2-col layout ── */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 22px;
+        align-items: start;
+    }
+
+    /* Assignment Info sidebar */
     .assignment-info {
         background: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        height: fit-content;
-    }
-    .submission-list {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        padding: 24px;
+        border-radius: 14px;
+        box-shadow: 0 2px 12px rgba(0,0,0,.07);
+        position: sticky;
+        top: 20px;
     }
     .assignment-info h3 {
-        margin-top: 0;
+        margin: 0 0 16px;
         color: #2c3e50;
-        border-bottom: 2px solid #f0f0f0;
-        padding-bottom: 15px;
-    }
-    .info-item {
-        margin-bottom: 15px;
-    }
-    .info-label {
-        font-weight: 600;
-        color: #7f8c8d;
-        font-size: 13px;
-        text-transform: uppercase;
-        margin-bottom: 5px;
-    }
-    .info-value {
-        color: #2c3e50;
-        font-size: 15px;
-    }
-    .badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    .submission-card {
-        border: 1px solid #eef2f7;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-        transition: border-color 0.3s;
-    }
-    .submission-card:hover {
-        border-color: #667eea;
-    }
-    .sub-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 15px;
-    }
-    .student-name {
-        font-weight: 600;
         font-size: 16px;
-        color: #2c3e50;
+        font-weight: 700;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 12px;
     }
-    .sub-date {
-        font-size: 13px;
-        color: #95a5a6;
+    .info-item { margin-bottom: 14px; }
+    .info-label { font-weight: 700; color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+    .info-value { color: #2c3e50; font-size: 14px; }
+
+    /* Submission list */
+    .submission-list { background: white; padding: 24px; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+    .submission-list h3 { margin: 0 0 16px; color: #2c3e50; font-size: 16px; font-weight: 700; }
+
+    .submission-card {
+        border: 1.5px solid #eef2f7;
+        border-radius: 10px;
+        padding: 18px 20px;
+        margin-bottom: 16px;
+        transition: border-color .25s, box-shadow .25s;
     }
+    .submission-card:hover { border-color: #667eea; box-shadow: 0 4px 16px rgba(102,126,234,.1); }
+    .sub-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .student-name { font-weight: 700; font-size: 15px; color: #1a1a2e; }
+    .sub-date { font-size: 12px; color: #aaa; margin-top: 2px; }
+    .sub-timing-badge { font-size: 11px; padding: 3px 9px; border-radius: 12px; font-weight: 700; }
+    .sub-timing-badge.on-time { background: #e8f5e9; color: #2e7d32; }
+    .sub-timing-badge.late    { background: #ffebee; color: #c62828; }
     .sub-content {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        font-size: 14px;
-        margin-bottom: 15px;
-        white-space: pre-wrap;
+        background: #f8f9fa; padding: 12px 15px; border-radius: 8px;
+        font-size: 13px; margin-bottom: 14px; white-space: pre-wrap;
+        color: #555; border-left: 3px solid #667eea; min-height: 36px;
     }
     .grade-form {
-        display: flex;
-        gap: 15px;
-        align-items: flex-end;
-        background: #f0f4ff;
-        padding: 15px;
-        border-radius: 8px;
+        display: flex; gap: 12px; align-items: flex-end;
+        background: #f0f4ff; padding: 14px 16px; border-radius: 10px; flex-wrap: wrap;
     }
-    .grade-input {
-        width: 100px;
+    .grade-form input {
+        padding: 8px 10px; border: 1.5px solid #dde3f0; border-radius: 7px;
+        font-size: 13px; outline: none; transition: border .2s;
     }
-    .feedback-input {
-        flex: 1;
-    }
+    .grade-form input:focus { border-color: #667eea; }
+    .grade-input-wrap { display: flex; flex-direction: column; gap: 4px; }
+    .grade-input-wrap label { font-size: 11px; font-weight: 700; color: #667eea; text-transform: uppercase; }
     .btn-grade {
-        background: #667eea;
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
+        background: linear-gradient(135deg,#667eea,#764ba2);
+        color: white; border: none; padding: 9px 16px; border-radius: 7px;
+        cursor: pointer; font-weight: 700; font-size: 13px; transition: opacity .2s;
     }
-    .graded-status {
-        color: #27ae60;
-        font-weight: 600;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
+    .btn-grade:hover { opacity: .9; }
+    .graded-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #e8f5e9; color: #2e7d32; padding: 5px 12px;
+        border-radius: 20px; font-size: 12px; font-weight: 700;
     }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+    @media (max-width: 1000px) { .charts-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 768px)  { .detail-grid { grid-template-columns: 1fr; } .charts-grid { grid-template-columns: 1fr; } }
 </style>
 
-<div class="detail-container">
-    <div class="assignment-info">
-        <h3>Assignment Details</h3>
-        <div class="info-item">
-            <div class="info-label">Title</div>
-            <div class="info-value">{{ assignment.title }}</div>
-        </div>
-        <div class="info-item">
-            <div class="info-label">Course</div>
-            <div class="info-value"><span class="badge" style="background:#e3f2fd; color:#1976d2;">{{ assignment.course.code }}</span></div>
-        </div>
-        <div class="info-item">
-            <div class="info-label">Target</div>
-            <div class="info-value">{{ assignment.branch }} ({{ assignment.year }})</div>
-        </div>
-        <div class="info-item">
-            <div class="info-label">Due Date</div>
-            <div class="info-value">{{ assignment.due_datetime|date:"M d, Y H:i"|default:"N/A" }}</div>
-        </div>
-        {% if assignment.attachment %}
-        <div class="info-item">
-            <div class="info-label">Attachment</div>
-            <div class="info-value"><a href="{{ assignment.attachment.url }}" target="_blank">📎 View Materials</a></div>
-        </div>
-        {% endif %}
-        <div class="info-item">
-            <div class="info-label">Instructions</div>
-            <div class="info-value">{{ assignment.description|linebreaks }}</div>
-        </div>
-        
-        <a href="{% url 'faculty_assignments' %}" style="display:block; margin-top:20px; color:#667eea; text-decoration:none;">← Back to List</a>
+<a class="back-link" href="{% url 'faculty_assignments' %}">← Back to Assignments</a>
+
+<!-- ── Stat Cards ── -->
+<div class="anal-cards">
+    <div class="anal-card blue">
+        <div class="anal-label">📩 Submitted</div>
+        <div class="anal-value">{{ submitted_count }}</div>
+        <div class="anal-sub">of {{ total_enrolled }} enrolled</div>
     </div>
+    <div class="anal-card red">
+        <div class="anal-label">⏳ Pending</div>
+        <div class="anal-value">{{ pending_count }}</div>
+        <div class="anal-sub">yet to submit</div>
+    </div>
+    <div class="anal-card green">
+        <div class="anal-label">✅ Graded</div>
+        <div class="anal-value">{{ graded_count }}</div>
+        <div class="anal-sub">of {{ submitted_count }} submissions</div>
+    </div>
+    <div class="anal-card orange">
+        <div class="anal-label">⏱ Ungraded</div>
+        <div class="anal-value">{{ ungraded_count }}</div>
+        <div class="anal-sub">awaiting review</div>
+    </div>
+    <div class="anal-card teal">
+        <div class="anal-label">🕐 On Time</div>
+        <div class="anal-value">{{ on_time_count }}</div>
+        <div class="anal-sub">{% if assignment.due_datetime %}before deadline{% else %}no deadline set{% endif %}</div>
+    </div>
+    <div class="anal-card purple">
+        <div class="anal-label">⚠️ Late</div>
+        <div class="anal-value">{{ late_count }}</div>
+        <div class="anal-sub">after deadline{% if is_overdue %} (overdue){% endif %}</div>
+    </div>
+</div>
 
-    <div class="submission-list">
-        <h3>Submissions ({{ submissions.count }})</h3>
-        
-        {% if submissions %}
-            {% for s in submissions %}
-                <div class="submission-card">
-                    <div class="sub-header">
-                        <div>
-                            <div class="student-name">{{ s.student.user.name }}</div>
-                            <div class="sub-date">Submitted on {{ s.submitted_at|date:"M d, Y H:i" }}</div>
-                        </div>
-                        {% if s.grade %}
-                            <div class="graded-status">✅ Graded: {{ s.grade }}</div>
-                        {% else %}
-                            <div class="badge" style="background:#fff3e0; color:#e65100;">Pending Grade</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="sub-content">{{ s.content }}</div>
-                    
-                    {% if s.attachment %}
-                        <div style="margin-bottom:15px;">
-                            <a href="{{ s.attachment.url }}" target="_blank" class="badge" style="background:#e8f5e9; color:#2e7d32; text-decoration:none;">
-                                📎 View Submission File
-                            </a>
-                        </div>
-                    {% endif %}
-
-                    <form method="POST" class="grade-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="grade">
-                        <input type="hidden" name="submission_id" value="{{ s.id }}">
-                        
-                        <div class="form-group grade-input">
-                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Grade</label>
-                            <input type="text" name="grade" value="{{ s.grade|default:'' }}" placeholder="A, B, 90..." style="width:100%; padding:6px; border-radius:4px; border:1px solid #ddd;">
-                        </div>
-                        
-                        <div class="form-group feedback-input">
-                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Feedback</label>
-                            <input type="text" name="feedback" value="{{ s.feedback|default:'' }}" placeholder="Great job!" style="width:100%; padding:6px; border-radius:4px; border:1px solid #ddd;">
-                        </div>
-                        
-                        <button type="submit" class="btn-grade">Save</button>
-                    </form>
-                </div>
-            {% endfor %}
+<!-- ── Charts ── -->
+<div class="charts-grid">
+    <!-- Donut: Submitted vs Pending -->
+    <div class="chart-box" style="align-items:center;">
+        <h4>📊 Submission Status</h4>
+        <canvas id="statusDonut" height="200" style="max-width:220px;"></canvas>
+        <div style="margin-top:10px; text-align:center;">
+            <span style="font-size:24px; font-weight:700; color:#1a1a2e;">{{ submission_pct }}%</span><br>
+            <span style="font-size:12px; color:#999;">submission rate</span>
+        </div>
+    </div>
+    <!-- Donut: Graded vs Ungraded -->
+    <div class="chart-box" style="align-items:center;">
+        <h4>🏅 Grading Status</h4>
+        <canvas id="gradingDonut" height="200" style="max-width:220px;"></canvas>
+        <div style="margin-top:10px; text-align:center;">
+            {% if submitted_count > 0 %}
+            <span style="font-size:24px; font-weight:700; color:#1a1a2e;">
+                {{ graded_count }}/{{ submitted_count }}
+            </span><br>
+            {% endif %}
+            <span style="font-size:12px; color:#999;">graded</span>
+        </div>
+    </div>
+    <!-- Bar/Line: Submission timeline -->
+    <div class="chart-box">
+        <h4>📅 Submission Timeline</h4>
+        {% if timeline_labels_json != "[]" %}
+        <canvas id="timelineChart" height="200"></canvas>
         {% else %}
-            <div style="text-align:center; padding:50px; color:#95a5a6;">
-                <p>No submissions yet.</p>
-            </div>
+        <div style="text-align:center; color:#ccc; padding:40px 0; font-size:13px;">No submissions yet</div>
         {% endif %}
     </div>
 </div>
+
+{% if grade_dist_json != "{}" and submitted_count > 0 %}
+<div style="background:#fff; border-radius:12px; padding:20px 24px; box-shadow:0 2px 12px rgba(0,0,0,.07); margin-bottom:24px;">
+    <h4 style="margin:0 0 14px; font-size:13px; font-weight:700; color:#2c3e50; text-transform:uppercase; letter-spacing:.4px;">📝 Grade Distribution</h4>
+    <canvas id="gradeBar" height="80"></canvas>
+</div>
+{% endif %}
+
+<!-- ── Detail 2-col ── -->
+<div class="detail-grid">
+    <!-- Sidebar -->
+    <div class="assignment-info">
+        <h3>📋 Assignment Details</h3>
+        <div class="info-item">
+            <div class="info-label">Title</div>
+            <div class="info-value" style="font-weight:700; font-size:15px;">{{ assignment.title }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Course</div>
+            <div class="info-value"><span class="badge" style="background:#e3f2fd; color:#1565c0;">{{ assignment.course.code }}</span> {{ assignment.course.name }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Target</div>
+            <div class="info-value">{{ assignment.branch }} | {{ assignment.year }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Posted On</div>
+            <div class="info-value">{{ assignment.created_at|date:"M d, Y" }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Due Date</div>
+            <div class="info-value">
+                {% if assignment.due_datetime %}
+                    {% if is_overdue %}
+                    <span class="badge" style="background:#ffebee; color:#c62828;">🔴 {{ assignment.due_datetime|date:"M d, Y H:i" }} (Overdue)</span>
+                    {% else %}
+                    <span class="badge" style="background:#e8f5e9; color:#2e7d32;">🟢 {{ assignment.due_datetime|date:"M d, Y H:i" }}</span>
+                    {% endif %}
+                {% else %}
+                    <span style="color:#aaa;">No deadline</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Submission Mode</div>
+            <div class="info-value">
+                {% if assignment.submission_mode == 'online' %}
+                <span class="badge" style="background:#e3f2fd; color:#1565c0; font-size:13px; padding:5px 12px;">🌐 Online — Via Portal</span>
+                {% else %}
+                <span class="badge" style="background:#fff3e0; color:#e65100; font-size:13px; padding:5px 12px;">📁 Offline — Physical Submission</span>
+                {% endif %}
+            </div>
+        </div>
+        {% if assignment.attachment %}
+
+        <div class="info-item">
+            <div class="info-label">Material</div>
+            <div class="info-value"><a href="{{ assignment.attachment.url }}" target="_blank" style="color:#667eea; font-weight:600;">📎 View Attachment</a></div>
+        </div>
+        {% endif %}
+        {% if assignment.description %}
+        <div class="info-item">
+            <div class="info-label">Instructions</div>
+            <div class="info-value" style="font-size:13px; line-height:1.6; color:#555;">{{ assignment.description|linebreaks }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Submissions List -->
+    <div class="submission-list">
+        <h3>📬 Submissions ({{ submitted_count }} of {{ total_enrolled }})</h3>
+
+        {% if submissions %}
+            {% for s in submissions %}
+            <div class="submission-card">
+                <div class="sub-header">
+                    <div>
+                        <div class="student-name">{{ s.student.user.name }}</div>
+                        <div class="sub-date">{{ s.student.enrollment_number }} • Submitted {{ s.submitted_at|date:"M d, Y H:i" }}</div>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        {% if assignment.due_datetime %}
+                            {% if s.submitted_at <= assignment.due_datetime %}
+                            <span class="sub-timing-badge on-time">🕐 On Time</span>
+                            {% else %}
+                            <span class="sub-timing-badge late">⚠️ Late</span>
+                            {% endif %}
+                        {% endif %}
+                        {% if s.grade %}
+                        <span class="graded-badge">✅ {{ s.grade }}</span>
+                        {% else %}
+                        <span class="badge" style="background:#fff3e0; color:#e65100;">⏳ Ungraded</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if s.content %}
+                <div class="sub-content">{{ s.content|default:"(no notes)" }}</div>
+                {% endif %}
+
+                {% if s.attachment %}
+                <div style="margin-bottom:12px;">
+                    <a href="{{ s.attachment.url }}" target="_blank"
+                       class="badge" style="background:#e8f5e9; color:#2e7d32; text-decoration:none; font-size:12px;">
+                        📎 View Submitted File
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if s.feedback %}
+                <div style="background:#f0f4ff; border-radius:7px; padding:10px 14px; font-size:13px; color:#3c4c7c; margin-bottom:12px;">
+                    💬 <strong>Feedback:</strong> {{ s.feedback }}
+                </div>
+                {% endif %}
+
+                <form method="POST" class="grade-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="grade">
+                    <input type="hidden" name="submission_id" value="{{ s.id }}">
+                    <div class="grade-input-wrap">
+                        <label>Grade</label>
+                        <input type="text" name="grade" value="{{ s.grade|default:'' }}"
+                               placeholder="A, B+, 85…" style="width:100px;">
+                    </div>
+                    <div class="grade-input-wrap" style="flex:1;">
+                        <label>Feedback</label>
+                        <input type="text" name="feedback" value="{{ s.feedback|default:'' }}"
+                               placeholder="Great work! …" style="width:100%;">
+                    </div>
+                    <button type="submit" class="btn-grade">💾 Save</button>
+                </form>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div style="text-align:center; padding:60px; color:#ccc;">
+            <div style="font-size:48px; margin-bottom:12px;">📭</div>
+            <p style="font-size:15px;">No submissions yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    const gradeDist    = {{ grade_dist_json|safe }};
+    const timeLabels   = {{ timeline_labels_json|safe }};
+    const timeValues   = {{ timeline_values_json|safe }};
+    const submitted    = {{ submitted_count }};
+    const pending      = {{ pending_count }};
+    const graded       = {{ graded_count }};
+    const ungraded     = {{ ungraded_count }};
+
+    /* Status donut */
+    if (document.getElementById('statusDonut')) {
+        new Chart(document.getElementById('statusDonut'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Submitted', 'Pending'],
+                datasets: [{
+                    data: [submitted, pending],
+                    backgroundColor: ['rgba(46,204,113,.85)', 'rgba(231,76,60,.7)'],
+                    borderWidth: 3, borderColor: '#fff'
+                }]
+            },
+            options: {
+                cutout: '70%', responsive: true,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } } }
+            }
+        });
+    }
+
+    /* Grading donut */
+    if (document.getElementById('gradingDonut')) {
+        new Chart(document.getElementById('gradingDonut'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Graded', 'Ungraded'],
+                datasets: [{
+                    data: [graded, ungraded],
+                    backgroundColor: ['rgba(52,152,219,.85)', 'rgba(243,156,18,.7)'],
+                    borderWidth: 3, borderColor: '#fff'
+                }]
+            },
+            options: {
+                cutout: '70%', responsive: true,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } } }
+            }
+        });
+    }
+
+    /* Timeline bar */
+    if (timeLabels.length > 0 && document.getElementById('timelineChart')) {
+        new Chart(document.getElementById('timelineChart'), {
+            type: 'bar',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Submissions',
+                    data: timeValues,
+                    backgroundColor: 'rgba(102,126,234,.8)',
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
+                    y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f0f0f0' } }
+                }
+            }
+        });
+    }
+
+    /* Grade distribution bar */
+    const gradeKeys = Object.keys(gradeDist);
+    const gradeVals = Object.values(gradeDist);
+    const colors = ['rgba(52,152,219,.8)','rgba(46,204,113,.8)','rgba(243,156,18,.8)',
+                    'rgba(231,76,60,.8)','rgba(155,89,182,.8)','rgba(26,188,156,.8)'];
+
+    if (gradeKeys.length > 0 && document.getElementById('gradeBar')) {
+        new Chart(document.getElementById('gradeBar'), {
+            type: 'bar',
+            data: {
+                labels: gradeKeys,
+                datasets: [{
+                    label: 'Students',
+                    data: gradeVals,
+                    backgroundColor: gradeKeys.map((_, i) => colors[i % colors.length]),
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true, indexAxis: 'x',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f0f0f0' } }
+                }
+            }
+        });
+    }
+})();
+</script>
 {% endblock %}
