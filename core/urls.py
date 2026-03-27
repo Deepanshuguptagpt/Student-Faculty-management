@@ -28,6 +28,7 @@ urlpatterns = [
     path('student/', include('backend.student.urls')),
     path('admin-panel/', include('backend.administration.urls')),
     path('faculty/', include('backend.faculty.urls')),
+    path('ai/', include('ai_assistant.urls')),
 ]
 
 if settings.DEBUG:

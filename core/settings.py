@@ -45,9 +45,13 @@ INSTALLED_APPS = [
     'backend.student',
     'backend.administration',
     'backend.faculty',
+    'ai_assistant',
+    'rest_framework',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -144,3 +148,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'your-email@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'your-app-password')
 DEFAULT_FROM_EMAIL = f"Academiq Portal <{EMAIL_HOST_USER}>"
+
+# Gemini AI Configuration
+GOOGLE_API_KEYS = os.environ.get("GOOGLE_API_KEYS", "").split(",")
+GEMINI_MODEL_NAME = "gemini-2.5-flash"
