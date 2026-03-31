@@ -145,13 +145,13 @@
                         <input type="hidden" name="student_ids" value="{{ item.student.id }}">
                         <input type="hidden" name="statuses" id="status_{{ item.student.id }}"
                             value="{{ item.status }}">
-                        <div class="toggle-group" style="display: flex; gap: 5px;">
-                            <button type="button"
-                                class="btn-toggle present {% if item.status  ==  'Present'  %}active{% endif %}"
-                                onclick="setStatus('{{ item.student.id }}', 'Present', this)">Present</button>
-                            <button type="button"
-                                class="btn-toggle absent {% if item.status  ==  'Absent'  %}active{% endif %}"
-                                onclick="setStatus('{{ item.student.id }}', 'Absent', this)">Absent</button>
+                        <div class="toggle-container" style="display: flex; align-items: center; gap: 10px;">
+                            <span class="status-label absent-label" style="font-size: 14px; font-weight: 600; color: {% if item.status == 'Absent' %}#ef4444{% else %}#94a3b8{% endif %};">Absent</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" onchange="toggleAttendance('{{ item.student.id }}', this)" {% if item.status != 'Absent' %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="status-label present-label" style="font-size: 14px; font-weight: 600; color: {% if item.status != 'Absent' %}#10b981{% else %}#94a3b8{% endif %};">Present</span>
                         </div>
                     </td>
                 </tr>
@@ -173,42 +173,68 @@
 {% endif %}
 
 <style>
-    .btn-toggle {
-        padding: 6px 12px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 54px;
+        height: 28px;
+    }
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .toggle-slider {
+        position: absolute;
         cursor: pointer;
-        background-color: #f8f9fa;
-        color: #333;
-        font-size: 14px;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ef4444;
+        transition: .3s;
+        border-radius: 34px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
     }
-
-    .btn-toggle.active.present {
-        background-color: #2ecc71;
-        color: white;
-        border-color: #2ecc71;
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-
-    .btn-toggle.active.absent {
-        background-color: #e74c3c;
-        color: white;
-        border-color: #e74c3c;
+    input:checked + .toggle-slider {
+        background-color: #10b981;
+    }
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+    .status-label {
+        transition: color 0.3s;
     }
 </style>
 <script>
-    function setStatus(studentId, status, btn) {
+    function toggleAttendance(studentId, checkbox) {
         // Update hidden input
-        document.getElementById('status_' + studentId).value = status;
-
-        // Remove active class from all buttons in this row
-        const group = btn.parentElement;
-        const buttons = group.getElementsByClassName('btn-toggle');
-        for (let b of buttons) {
-            b.classList.remove('active');
+        const statusInput = document.getElementById('status_' + studentId);
+        const container = checkbox.closest('.toggle-container');
+        const absentLabel = container.querySelector('.absent-label');
+        const presentLabel = container.querySelector('.present-label');
+        
+        if (checkbox.checked) {
+            statusInput.value = 'Present';
+            presentLabel.style.color = '#10b981';
+            absentLabel.style.color = '#94a3b8';
+        } else {
+            statusInput.value = 'Absent';
+            absentLabel.style.color = '#ef4444';
+            presentLabel.style.color = '#94a3b8';
         }
-
-        // Add active class to clicked button
-        btn.classList.add('active');
     }
 </script>
 {% endblock %}

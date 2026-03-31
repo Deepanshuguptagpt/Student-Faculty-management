@@ -325,7 +325,7 @@ def faculty_attendance(request):
                     defaults={"status": status}
                 )
             
-            return redirect(f'/faculty/dashboard/attendance/?success=1&course_id={course_id}&date={date}&lecture_number={lecture_number}')
+            return redirect('/faculty/dashboard/')
     
     # If selected a course to view/take attendance
     selected_course_id = request.GET.get('course_id')
