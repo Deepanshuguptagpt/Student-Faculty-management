@@ -1,8 +1,10 @@
 venv/
+.venv/
 check_env/
 __pycache__/
 *.pyc
 *.sqlite3
 .env
 .DS_Store
+tmp/
 !db_v2.sqlite3

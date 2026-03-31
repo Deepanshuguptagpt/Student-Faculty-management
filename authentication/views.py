@@ -3,6 +3,10 @@ from django.urls import reverse
 from .models import User
 from django.contrib.auth.models import User as DjangoUser
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.hashers import check_password
+import logging
+
+logger = logging.getLogger(__name__)
 
 def landing(request):
     return render(request,'authentication/landing.html')
@@ -43,7 +47,7 @@ def login_view(request, role):
             try:
                 user = User.objects.get(email=email)
 
-                if user.password != password:
+                if not check_password(password, user.password):
                     error = "Invalid password"
 
                 elif user.role != role:
@@ -63,6 +67,13 @@ def login_view(request, role):
                 error = "User not registered"
 
     return render(request,'authentication/login.html',{"role":role,"error":error})
+
+
+def logout_view(request):
+    """Clear all session data and redirect to login."""
+    request.session.flush()
+    return redirect('/auth/')
+
 
 def student_dashboard(request):
     return render(request,'dashboards/student_dashboard.html')

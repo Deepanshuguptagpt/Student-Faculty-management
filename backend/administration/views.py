@@ -1,24 +1,41 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 import json
+import logging
+from functools import wraps
 from authentication.models import User
 from backend.student.models import StudentProfile, FeeRecord, BRANCH_CHOICES, COURSE_CHOICES, SEMESTER_CHOICES, FeeMonitoringLog
 from backend.faculty.models import FacultyProfile
 from django.core.management import call_command
 from django.contrib import messages
+from django.contrib.auth.hashers import make_password
 
+logger = logging.getLogger(__name__)
+
+# ── Year choices constant ─────────────────────────────────────────────────────
+YEAR_CHOICES = ['1st Year', '2nd Year', '3rd Year', '4th Year']
+
+
+def admin_login_required(view_func):
+    """Decorator that checks for Django admin session."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return redirect('/auth/login/admin/')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+@admin_login_required
 def admin_dashboard(request):
     total_students = StudentProfile.objects.count()
     total_faculty = FacultyProfile.objects.count()
     
-    # Calculate global fee analytics for top stats cards
     all_fees = FeeRecord.objects.all()
     total_collected = sum(f.amount_paid for f in all_fees)
     global_total_pending = sum(f.remaining_amount for f in all_fees)
     
-    # Get all students with filters
     students = StudentProfile.objects.all().select_related('user')
     
-    # Apply filters
     branch_filter = request.GET.get('branch')
     year_filter = request.GET.get('year')
     course_filter = request.GET.get('course')
@@ -49,35 +66,30 @@ def admin_dashboard(request):
             Q(enrollment_number__icontains=search_query)
         )
     
-    # Get faculty and fees for tabs
     faculty = FacultyProfile.objects.all().select_related('user', 'department').order_by('department__name')
     
-    # Fee logic for Dashboard tab
     fees_query = FeeRecord.objects.filter(student__in=students).select_related('student__user').order_by('student__enrollment_number', 'semester')
     
-    # Calculate dues based on current filtered selection (respecting Search/Branch/Year)
     filtered_total_dues = sum(f.remaining_amount for f in fees_query)
 
-    # Hide already paid historical records for the table view only
     fees = fees_query.exclude(status='Paid')
     
     if active_tab != 'fees':
         fees = fees[:50]
     
-    year_choices = ['1st year', '2nd year', '3rd year', '4th year']
     sections = StudentProfile.objects.exclude(section__isnull=True).exclude(section='').values_list('section', flat=True).distinct().order_by('section')
     
     context = {
         'total_students': total_students,
         'total_faculty': total_faculty,
         'total_collected': total_collected,
-        'total_pending': global_total_pending,  # Overall institute health
-        'total_dues': filtered_total_dues,      # Responsive to filters/search
+        'total_pending': global_total_pending,
+        'total_dues': filtered_total_dues,
         'students': students,
         'faculty': faculty,
         'fees': fees,
         'branches': [b[0] for b in BRANCH_CHOICES],
-        'years': year_choices,
+        'years': YEAR_CHOICES,
         'courses': [c[0] for c in COURSE_CHOICES],
         'sections': list(sections),
         'selected_branch': branch_filter,
@@ -102,6 +114,7 @@ def admin_dashboard(request):
     return render(request, "dashboards/admin/overview_new.html", context)
 
 
+@admin_login_required
 def manage_students(request):
     from datetime import date
     students = StudentProfile.objects.all().select_related('user')
@@ -114,17 +127,13 @@ def manage_students(request):
     if branch_filter:
         students = students.filter(branch=branch_filter)
     if year_filter:
-        # Filter by current year (1st, 2nd, 3rd, 4th)
         current_year = date.today().year
         current_month = date.today().month
-        year_num = int(year_filter.split()[0][0])  # Extract number from "1st year", "2nd year", etc.
+        year_num = int(year_filter.split()[0][0])
         
-        # Calculate batch years that correspond to this year level
         if current_month >= 7:
-            # After July, new academic year has started
             target_batch = current_year - (year_num - 1)
         else:
-            # Before July, still in previous academic year
             target_batch = current_year - year_num
         
         students = students.filter(batch_year=target_batch)
@@ -138,8 +147,6 @@ def manage_students(request):
             Q(enrollment_number__icontains=search_query)
         )
 
-    year_choices = ['1st year', '2nd year', '3rd year', '4th year']
-
     return render(request, "dashboards/admin/students.html", {
         'students': students, 
         'selected_branch': branch_filter, 
@@ -148,17 +155,18 @@ def manage_students(request):
         'search_query': search_query,
         'branches': [b[0] for b in BRANCH_CHOICES],
         'courses': [c[0] for c in COURSE_CHOICES],
-        'years': year_choices
+        'years': YEAR_CHOICES
     })
 
 
+@admin_login_required
 def manage_faculty(request):
     faculty = FacultyProfile.objects.all().select_related('user', 'department').order_by('department__name')
     return render(request, "dashboards/admin/faculty.html", {'faculty': faculty})
 
 
+@admin_login_required
 def fee_management(request):
-    # Get all students first to ensure everyone is listed
     students = StudentProfile.objects.all().select_related('user')
     
     branch_filter = request.GET.get('branch')
@@ -177,18 +185,14 @@ def fee_management(request):
             Q(enrollment_number__icontains=search_query)
         )
 
-    # Now get fees but filter them by the students we've narrowed down
     fees = FeeRecord.objects.filter(student__in=students).select_related('student__user').order_by('student__enrollment_number', 'semester')
     
     if semester_filter:
         fees = fees.filter(semester=semester_filter)
     else:
-        # Per USER request: By default, show only the records that are not fully paid
-        # This keeps the dashboard clean and focused on current/pending work
         fees = fees.exclude(status='Paid')
     
     total_dues = sum(f.remaining_amount for f in fees)
-    
 
     logs = FeeMonitoringLog.objects.all().order_by('-date_performed')[:5]
     
@@ -205,14 +209,19 @@ def fee_management(request):
         'agent_logs': logs
     })
 
+
+@admin_login_required
 def run_fee_agent_view(request):
     try:
         call_command('fee_agent', force=True)
         messages.success(request, "Fee Management Agent executed successfully. Reminder emails sent.")
     except Exception as e:
+        logger.error(f"Fee agent error: {e}", exc_info=True)
         messages.error(request, f"Error running Fee Management Agent: {str(e)}")
     return redirect('fee_management')
 
+
+@admin_login_required
 def initialize_default_fees(request):
     from datetime import date
     students = StudentProfile.objects.all()
@@ -222,7 +231,6 @@ def initialize_default_fees(request):
     current_month_now = date.today().month
 
     for student in students:
-        # Calculate current semester integer
         years_diff = current_year_now - student.batch_year
         if current_month_now >= 7:
             s_int = years_diff * 2 + 1
@@ -231,16 +239,15 @@ def initialize_default_fees(request):
         
         s_int = max(1, s_int)
         
-        # Determine the two semesters for the current academic year
-        if s_int % 2 != 0: # Odd (1, 3, 5, 7)
+        if s_int % 2 != 0:
             sem_a = s_int
             sem_b = s_int + 1
-        else: # Even (2, 4, 6, 8)
+        else:
             sem_a = s_int - 1
             sem_b = s_int
             
         for i in [sem_a, sem_b]:
-            if i > 8: continue # Only up to 8th semester
+            if i > 8: continue
             
             suffix = "th"
             if i == 1: suffix = "st"
@@ -261,14 +268,19 @@ def initialize_default_fees(request):
             if created:
                 created_count += 1
                 
-    return redirect('admin_dashboard') # Redirect to main dashboard
+    return redirect('admin_dashboard')
 
+
+@admin_login_required
 def add_student(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         name = request.POST.get('name')
         if not User.objects.filter(email=email).exists():
-            user = User.objects.create(email=email, name=name, role='student', password='ADMIN')
+            user = User.objects.create(
+                email=email, name=name, role='student',
+                password=make_password('ADMIN')  # Hash the default password
+            )
             StudentProfile.objects.create(
                 user=user,
                 enrollment_number=request.POST.get('enrollment_number'),
@@ -285,8 +297,10 @@ def add_student(request):
         'courses': [c[0] for c in COURSE_CHOICES]
     })
 
+
+@admin_login_required
 def edit_student(request, student_id):
-    student = StudentProfile.objects.get(id=student_id)
+    student = get_object_or_404(StudentProfile, id=student_id)
     if request.method == 'POST':
         student.user.name = request.POST.get('name')
         student.user.email = request.POST.get('email')
@@ -309,19 +323,29 @@ def edit_student(request, student_id):
         'courses': [c[0] for c in COURSE_CHOICES]
     })
 
+
+@admin_login_required
 def delete_student(request, student_id):
-    student = StudentProfile.objects.get(id=student_id)
-    student.user.delete() # Automatically cascades to StudentProfile
+    """Delete a student — requires POST for safety."""
+    if request.method != 'POST':
+        return redirect('manage_students')
+    student = get_object_or_404(StudentProfile, id=student_id)
+    student.user.delete()
     return redirect('manage_students')
 
+
+@admin_login_required
 def add_faculty(request):
     from backend.faculty.models import Department
     if request.method == 'POST':
         email = request.POST.get('email')
         name = request.POST.get('name')
         if not User.objects.filter(email=email).exists():
-            user = User.objects.create(email=email, name=name, role='faculty', password='ADMIN')
-            dept = Department.objects.get(id=request.POST.get('department_id'))
+            user = User.objects.create(
+                email=email, name=name, role='faculty',
+                password=make_password('ADMIN')  # Hash the default password
+            )
+            dept = get_object_or_404(Department, id=request.POST.get('department_id'))
             FacultyProfile.objects.create(
                 user=user,
                 department=dept,
@@ -334,15 +358,17 @@ def add_faculty(request):
         'departments': Department.objects.all()
     })
 
+
+@admin_login_required
 def edit_faculty(request, faculty_id):
     from backend.faculty.models import Department
-    faculty = FacultyProfile.objects.get(id=faculty_id)
+    faculty = get_object_or_404(FacultyProfile, id=faculty_id)
     if request.method == 'POST':
         faculty.user.name = request.POST.get('name')
         faculty.user.email = request.POST.get('email')
         faculty.user.save()
         
-        faculty.department = Department.objects.get(id=request.POST.get('department_id'))
+        faculty.department = get_object_or_404(Department, id=request.POST.get('department_id'))
         faculty.designation = request.POST.get('designation')
         faculty.contact_number = request.POST.get('contact_number')
         faculty.save()
@@ -355,7 +381,12 @@ def edit_faculty(request, faculty_id):
         'departments': Department.objects.all()
     })
 
+
+@admin_login_required
 def delete_faculty(request, faculty_id):
-    faculty = FacultyProfile.objects.get(id=faculty_id)
-    faculty.user.delete() # Automatically cascades
+    """Delete a faculty member — requires POST for safety."""
+    if request.method != 'POST':
+        return redirect('manage_faculty')
+    faculty = get_object_or_404(FacultyProfile, id=faculty_id)
+    faculty.user.delete()
     return redirect('manage_faculty')

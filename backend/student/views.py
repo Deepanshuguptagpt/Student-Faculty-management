@@ -1,16 +1,31 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from functools import wraps
+import logging
 from .models import StudentProfile, Course, Enrollment, Attendance, FeeRecord, AcademicRecord
 from .utils import calculate_detailed_attendance
+
+logger = logging.getLogger(__name__)
+
+
+def student_login_required(view_func):
+    """Decorator that checks for a valid student session."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.session.get('student_email'):
+            return redirect('/auth/login/student/')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
 
 def get_student_profile(request):
     """Helper method to get the current student profile from session."""
     student_email = request.session.get('student_email')
     if student_email:
         return StudentProfile.objects.filter(user__email=student_email).first()
-    return StudentProfile.objects.first() # Fallback for demo
+    return None  # No fallback — caller must handle None
 
 
+@student_login_required
 def student_dashboard(request):
     try:
         student_profile = get_student_profile(request)
@@ -42,23 +57,24 @@ def student_dashboard(request):
             'profile': student_profile,
             'enrollments': enrollments,
             'attendance_percentage': attendance_data['global_overall_pct'],
-            'attendance_records': attendance_records[:10],  # Show recent 10
+            'attendance_records': attendance_records[:10],
             'fee_records': fee_records,
-            'records': academic_records,  # For grades tab
+            'records': academic_records,
             'total_due': total_due,
             'total_paid': total_paid,
             'notes_list': SubjectNote.objects.filter(branch=student_profile.branch, year=student_profile.current_year).order_by('-uploaded_at'),
         }
         return render(request, "dashboards/student/overview_new.html", context)
     except Exception as e:
-        import traceback
-        print(traceback.format_exc())
+        logger.error(f"Student dashboard error: {e}", exc_info=True)
         return render(request, "dashboards/student/overview_new.html", {"error": str(e)})
 
+
+@student_login_required
 def student_attendance(request):
     profile = get_student_profile(request)
     if not profile:
-        return redirect('login')
+        return redirect('/auth/login/student/')
 
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
@@ -75,17 +91,20 @@ def student_attendance(request):
         'end_date': end_date_str
     })
 
+
+@student_login_required
 def student_fees(request):
     profile = get_student_profile(request)
     records = FeeRecord.objects.filter(student=profile)
     total_due = sum(fee.amount_due for fee in records if fee.status != 'Paid')
     return render(request, "dashboards/student/fees.html", {'profile': profile, 'records': records, 'total_due': total_due})
 
+
+@student_login_required
 def student_courses(request):
     profile = get_student_profile(request)
     records = Enrollment.objects.filter(student=profile)
     
-    # Calculate pending assignments for notification count
     from backend.faculty.models import Assignment, AssignmentSubmission
     for enrollment in records:
         total = Assignment.objects.filter(course=enrollment.course, branch=profile.branch).count()
@@ -98,14 +117,15 @@ def student_courses(request):
 
     return render(request, "dashboards/student/courses.html", {'profile': profile, 'records': records})
 
+
+@student_login_required
 def student_course_assignments(request, course_id):
     profile = get_student_profile(request)
-    course = Course.objects.get(id=course_id)
+    course = get_object_or_404(Course, id=course_id)
     from backend.faculty.models import Assignment, AssignmentSubmission
     from django.utils import timezone
     assignments = Assignment.objects.filter(course=course, branch=profile.branch).order_by('-created_at')
 
-    # Enrich assignments with student's current submission status
     for a in assignments:
         a.my_submission = AssignmentSubmission.objects.filter(assignment=a, student=profile).first()
 
@@ -117,11 +137,12 @@ def student_course_assignments(request, course_id):
     })
 
 
+@student_login_required
 def student_submit_assignment(request, assignment_id):
     profile = get_student_profile(request)
     from backend.faculty.models import Assignment, AssignmentSubmission
     from django.utils import timezone
-    assignment = Assignment.objects.get(id=assignment_id)
+    assignment = get_object_or_404(Assignment, id=assignment_id)
 
     if request.method == 'POST':
         # Guard 1: offline assignments cannot be submitted via portal
@@ -167,8 +188,9 @@ def student_submit_assignment(request, assignment_id):
         'is_past_due': is_past_due,
     })
 
+
+@student_login_required
 def student_academics(request):
     profile = get_student_profile(request)
     records = AcademicRecord.objects.filter(student=profile)
     return render(request, "dashboards/student/academics.html", {'profile': profile, 'records': records})
-

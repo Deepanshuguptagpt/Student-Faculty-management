@@ -1,19 +1,37 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 import json
 import datetime
-from django.contrib.auth.decorators import login_required
+import logging
+from functools import wraps
 from .models import FacultyProfile, FacultyCourseAssignment, Department
 from backend.student.models import Attendance, Course, Enrollment, StudentProfile, AttendanceMonitoringLog, BRANCH_CHOICES
 import subprocess
+
+logger = logging.getLogger(__name__)
+
+# ── Year choices constant (used everywhere) ──────────────────────────────────
+YEAR_CHOICES = ['1st Year', '2nd Year', '3rd Year', '4th Year']
+
+
+def faculty_login_required(view_func):
+    """Decorator that checks for a valid faculty session."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.session.get('faculty_email'):
+            return redirect('/auth/login/faculty/')
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 
 def get_faculty_profile(request):
     faculty_email = request.session.get('faculty_email')
     if faculty_email:
         return FacultyProfile.objects.filter(user__email=faculty_email).first()
-    return FacultyProfile.objects.first() # Fallback for demo
+    return None  # No fallback — caller must handle None
 
 
+@faculty_login_required
 def faculty_dashboard(request):
     try:
         profile = get_faculty_profile(request)
@@ -23,7 +41,6 @@ def faculty_dashboard(request):
         # Handle POST request for creating assignment
         if request.method == 'POST' and request.POST.get('action') == 'create_assignment':
             from .models import Assignment
-            import datetime
             title = request.POST.get('title')
             description = request.POST.get('description')
             course_id = request.POST.get('course_id')
@@ -32,13 +49,10 @@ def faculty_dashboard(request):
             attachment = request.FILES.get('attachment')
             submission_mode = request.POST.get('submission_mode', 'online')
 
-            due_datetime = request.POST.get('due_date') # Keep POST name as 'due_date' for form compatibility
-            selected_dt = None # Initialize selected_dt
+            due_datetime = request.POST.get('due_date')
+            selected_dt = None
             if due_datetime:
                 from django.utils import timezone
-                # Handle both date only and datetime strings if possible, 
-                # but usually it's %Y-%m-%d from HTML date input.
-                # We'll default to end of day if only date is provided.
                 try:
                     naive_dt = datetime.datetime.strptime(due_datetime, '%Y-%m-%dT%H:%M')
                 except ValueError:
@@ -72,7 +86,6 @@ def faculty_dashboard(request):
         if request.method == 'POST' and request.POST.get('action') == 'extend_deadline':
             from .models import Assignment, AssignmentSubmission
             from django.utils import timezone
-            import datetime
             from django.core.mail import send_mail
             from django.conf import settings
             from langchain_google_genai import ChatGoogleGenerativeAI
@@ -87,7 +100,8 @@ def faculty_dashboard(request):
                 try:
                     naive_dt = datetime.datetime.strptime(new_due_date, '%Y-%m-%dT%H:%M')
                     new_dt = timezone.make_aware(naive_dt)
-                except:
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Invalid date format for deadline extension: {e}")
                     return redirect('/faculty/dashboard/?tab=assignments&error=Invalid date format')
                 
                 if new_dt <= timezone.now():
@@ -113,7 +127,8 @@ Tone: Professional and encouraging. 2-3 sentences. No subject line."""
                         try:
                             resp = llm.invoke([SystemMessage(content="You are the Academiq Assistant."), HumanMessage(content=prompt)])
                             body = resp.content.strip()
-                        except:
+                        except Exception as e:
+                            logger.warning(f"AI email generation failed, using fallback: {e}")
                             body = f"Dear {student.user.name}, the deadline for '{assignment.title}' has been extended to {new_dt.strftime('%B %d, %Y at %I:%M %p')}. Please ensure your submission is completed on time."
 
                         send_mail(f"Deadline Extended: {assignment.title}", body, settings.DEFAULT_FROM_EMAIL, [student.user.email], fail_silently=True)
@@ -153,7 +168,6 @@ Tone: Professional and encouraging. 2-3 sentences. No subject line."""
         
         # Get workload data
         workload_data = []
-        # (Assuming workload_data logic exists below or I should add it if it's not and it's needed for the template)
         
         # AI Monitoring Logic
         latest_monitoring = AttendanceMonitoringLog.objects.order_by('-date_performed').first()
@@ -162,7 +176,6 @@ Tone: Professional and encouraging. 2-3 sentences. No subject line."""
             subprocess.Popen(['python', 'manage.py', 'attendance_agent', '--force'])
             return redirect('/faculty/dashboard/?tab=ai_monitoring&triggered=1')
 
-        # Get existing context data (I'll need to see more lines to ensure I don't break existing logic)
         for assignment in assignments:
             student_count = Enrollment.objects.filter(course=assignment.course).count()
             workload_data.append({
@@ -180,7 +193,6 @@ Tone: Professional and encouraging. 2-3 sentences. No subject line."""
             student_stats = []
             for en in enrollments:
                 student = en.student
-                # Count records specifically for this student and course
                 student_total_classes = Attendance.objects.filter(student=student, course=course).count()
                 present = Attendance.objects.filter(student=student, course=course, status='Present').count()
                 attendance_percent = (present / student_total_classes * 100) if student_total_classes > 0 else 0
@@ -202,7 +214,6 @@ Tone: Professional and encouraging. 2-3 sentences. No subject line."""
         
         # Get assignment data
         from .models import Assignment, SubjectNote
-        from backend.student.models import BRANCH_CHOICES
         
         assignment_list = Assignment.objects.filter(faculty=profile).order_by('-created_at')
         
@@ -210,7 +221,7 @@ Tone: Professional and encouraging. 2-3 sentences. No subject line."""
         branch_filter = request.GET.get('branch')
         year_filter = request.GET.get('year')
         course_filter = request.GET.get('course')
-        active_tab = request.GET.get('tab', 'profile')  # Get active tab from URL
+        active_tab = request.GET.get('tab', 'profile')
         
         if branch_filter:
             assignment_list = assignment_list.filter(branch=branch_filter)
@@ -218,8 +229,6 @@ Tone: Professional and encouraging. 2-3 sentences. No subject line."""
             assignment_list = assignment_list.filter(year=year_filter)
         if course_filter:
             assignment_list = assignment_list.filter(course_id=course_filter)
-        
-        year_choices = ['1st Year', '2nd Year', '3rd Year', '4th Year']
         
         context = {
             'profile': profile,
@@ -232,7 +241,7 @@ Tone: Professional and encouraging. 2-3 sentences. No subject line."""
             'my_courses': my_courses,
             'courses': courses,
             'branches': [b[0] for b in BRANCH_CHOICES],
-            'years': year_choices,
+            'years': YEAR_CHOICES,
             'assignment_list': assignment_list,
             'selected_branch': branch_filter,
             'selected_year': year_filter,
@@ -256,17 +265,21 @@ Tone: Professional and encouraging. 2-3 sentences. No subject line."""
         }
         return render(request, "dashboards/faculty/overview_new.html", context)
     except Exception as e:
+        logger.error(f"Faculty dashboard error: {e}", exc_info=True)
         return render(request, "dashboards/faculty/overview_new.html", {"error": str(e)})
 
+
+@faculty_login_required
 def faculty_profile(request):
     profile = get_faculty_profile(request)
     return render(request, "dashboards/faculty/profile.html", {"profile": profile})
 
+
+@faculty_login_required
 def faculty_courses(request):
     profile = get_faculty_profile(request)
     assignments = FacultyCourseAssignment.objects.filter(faculty=profile)
     
-    # Calculate workload per course
     workload_data = []
     for assignment in assignments:
         student_count = Enrollment.objects.filter(course=assignment.course).count()
@@ -278,11 +291,12 @@ def faculty_courses(request):
         
     return render(request, "dashboards/faculty/courses.html", {"profile": profile, "workload_data": workload_data})
 
+
+@faculty_login_required
 def faculty_attendance(request):
     profile = get_faculty_profile(request)
     my_assignments = FacultyCourseAssignment.objects.filter(faculty=profile)
     my_course_ids = my_assignments.values_list('course_id', flat=True)
-    all_courses = Course.objects.all()
     
     if request.method == "POST":
         course_id = request.POST.get("course_id")
@@ -292,12 +306,11 @@ def faculty_attendance(request):
         statuses = request.POST.getlist("statuses")
         
         # Server-side validation for date
-        from datetime import datetime, date as date_obj
+        from datetime import datetime as dt_class, date as date_obj
         if date:
-            selected_date = datetime.strptime(date, '%Y-%m-%d').date()
+            selected_date = dt_class.strptime(date, '%Y-%m-%d').date()
             today = date_obj.today()
             
-            # Check if future date
             if selected_date > today:
                 return render(request, "dashboards/faculty/attendance.html", {
                     'profile': profile,
@@ -306,8 +319,7 @@ def faculty_attendance(request):
                     'error': 'Cannot mark attendance for future dates. Please select today or a previous date.'
                 })
             
-            # Check if Sunday
-            if selected_date.weekday() == 6:  # 6 = Sunday
+            if selected_date.weekday() == 6:
                 return render(request, "dashboards/faculty/attendance.html", {
                     'profile': profile,
                     'my_courses': Course.objects.filter(id__in=my_course_ids),
@@ -315,11 +327,10 @@ def faculty_attendance(request):
                     'error': 'Cannot mark attendance on Sundays. Please select a weekday.'
                 })
         
-        # For simplicity, if taking attendance
         if course_id and date and lecture_number and student_ids:
-            course = Course.objects.get(id=course_id)
+            course = get_object_or_404(Course, id=course_id)
             for student_id, status in zip(student_ids, statuses):
-                student = StudentProfile.objects.get(id=student_id)
+                student = get_object_or_404(StudentProfile, id=student_id)
                 Attendance.objects.update_or_create(
                     student=student, course=course, date=date, lecture_number=lecture_number,
                     defaults={"status": status}
@@ -327,7 +338,6 @@ def faculty_attendance(request):
             
             return redirect('/faculty/dashboard/')
     
-    # If selected a course to view/take attendance
     selected_course_id = request.GET.get('course_id')
     selected_date = request.GET.get('date')
     selected_lecture = request.GET.get('lecture_number')
@@ -335,18 +345,16 @@ def faculty_attendance(request):
     # Server-side validation for GET request
     error_message = None
     if selected_date:
-        from datetime import datetime, date as date_obj
+        from datetime import datetime as dt_class, date as date_obj
         try:
-            selected_date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date()
+            selected_date_obj = dt_class.strptime(selected_date, '%Y-%m-%d').date()
             today = date_obj.today()
             
-            # Check if future date
             if selected_date_obj > today:
                 error_message = 'Cannot view attendance for future dates. Please select today or a previous date.'
                 selected_date = None
             
-            # Check if Sunday
-            elif selected_date_obj.weekday() == 6:  # 6 = Sunday
+            elif selected_date_obj.weekday() == 6:
                 error_message = 'Cannot mark attendance on Sundays. Please select a weekday.'
                 selected_date = None
         except ValueError:
@@ -383,10 +391,11 @@ def faculty_attendance(request):
     }
     return render(request, "dashboards/faculty/attendance.html", context)
 
+
+@faculty_login_required
 def faculty_analytics(request):
     profile = get_faculty_profile(request)
     assignments = FacultyCourseAssignment.objects.filter(faculty=profile)
-    course_ids = assignments.values_list('course_id', flat=True)
     
     analytics_data = []
     for assignment in assignments:
@@ -396,7 +405,6 @@ def faculty_analytics(request):
         student_stats = []
         for en in enrollments:
             student = en.student
-            # Count records specifically for this student and course
             student_total_classes = Attendance.objects.filter(student=student, course=course).count()
             present = Attendance.objects.filter(student=student, course=course, status='Present').count()
             attendance_percent = (present / student_total_classes * 100) if student_total_classes > 0 else 0
@@ -418,7 +426,7 @@ def faculty_analytics(request):
     return render(request, "dashboards/faculty/analytics.html", context)
 
 
-
+@faculty_login_required
 def faculty_assignments(request):
     profile = get_faculty_profile(request)
     my_assigned_courses = FacultyCourseAssignment.objects.filter(faculty=profile).values_list('course_id', flat=True)
@@ -435,11 +443,13 @@ def faculty_assignments(request):
         submission_mode = request.POST.get('submission_mode', 'online')
         selected_dt = None
         if due_datetime_raw:
+            from django.utils import timezone
             try:
-                selected_dt = datetime.datetime.strptime(due_datetime_raw, '%Y-%m-%dT%H:%M')
+                naive_dt = datetime.datetime.strptime(due_datetime_raw, '%Y-%m-%dT%H:%M')
             except ValueError:
-                selected_dt = datetime.datetime.strptime(due_datetime_raw, '%Y-%m-%d')
-                selected_dt = selected_dt.replace(hour=23, minute=59, second=59)
+                naive_dt = datetime.datetime.strptime(due_datetime_raw, '%Y-%m-%d')
+                naive_dt = naive_dt.replace(hour=23, minute=59, second=59)
+            selected_dt = timezone.make_aware(naive_dt)
         attachment = request.FILES.get('attachment')
         
         if title and course_id and branch:
@@ -475,7 +485,6 @@ def faculty_assignments(request):
     if course_filter:
         assignments = assignments.filter(course_id=course_filter)
 
-    year_choices = ['1st year', '2nd year', '3rd year', '4th year']
     now = timezone.now()
 
     # --- Build real per-assignment analytics ---
@@ -529,7 +538,7 @@ def faculty_assignments(request):
     total_pending_all = max(0, total_enrolled_all - total_submitted_all)
     overall_submission_pct = round((total_submitted_all / total_enrolled_all * 100), 1) if total_enrolled_all > 0 else 0
 
-    # Chart: submitted vs pending vs graded for top 7 assignments
+    # Chart data
     chart_labels = []
     chart_submitted = []
     chart_pending = []
@@ -545,13 +554,12 @@ def faculty_assignments(request):
         'profile': profile,
         'courses': courses,
         'branches': [b[0] for b in BRANCH_CHOICES],
-        'years': year_choices,
+        'years': YEAR_CHOICES,
         'assignments_data': assignments_data,
         'assignments': [d['assignment'] for d in assignments_data],
         'selected_branch': branch_filter,
         'selected_year': year_filter,
         'selected_course': course_filter,
-        # Summary stat cards
         'total_assignments': total_assignments,
         'total_submitted_all': total_submitted_all,
         'total_enrolled_all': total_enrolled_all,
@@ -560,13 +568,14 @@ def faculty_assignments(request):
         'total_active': total_active,
         'total_overdue_count': total_overdue_count,
         'overall_submission_pct': overall_submission_pct,
-        # Chart JSON
         'chart_labels_json': json.dumps(chart_labels),
         'chart_submitted_json': json.dumps(chart_submitted),
         'chart_pending_json': json.dumps(chart_pending),
         'chart_graded_json': json.dumps(chart_graded),
     })
 
+
+@faculty_login_required
 def faculty_assignment_detail(request, assignment_id):
     profile = get_faculty_profile(request)
     from .models import Assignment, AssignmentSubmission
@@ -574,14 +583,14 @@ def faculty_assignment_detail(request, assignment_id):
     from django.utils import timezone
     from collections import defaultdict
 
-    assignment = Assignment.objects.get(id=assignment_id, faculty=profile)
+    assignment = get_object_or_404(Assignment, id=assignment_id, faculty=profile)
     submissions = AssignmentSubmission.objects.filter(assignment=assignment).select_related('student__user').order_by('submitted_at')
 
     if request.method == 'POST' and request.POST.get('action') == 'grade':
         submission_id = request.POST.get('submission_id')
         grade = request.POST.get('grade')
         feedback = request.POST.get('feedback')
-        sub = AssignmentSubmission.objects.get(id=submission_id, assignment=assignment)
+        sub = get_object_or_404(AssignmentSubmission, id=submission_id, assignment=assignment)
         sub.grade = grade
         sub.feedback = feedback
         sub.save()
@@ -596,7 +605,6 @@ def faculty_assignment_detail(request, assignment_id):
     graded_count = submissions.exclude(grade__isnull=True).exclude(grade__exact='').count()
     ungraded_count = submitted_count - graded_count
 
-    # On-time vs late
     if assignment.due_datetime:
         on_time_count = submissions.filter(submitted_at__lte=assignment.due_datetime).count()
         late_count = submitted_count - on_time_count
@@ -606,14 +614,14 @@ def faculty_assignment_detail(request, assignment_id):
         late_count = 0
         is_overdue = False
 
-    # Grade distribution (letter/numeric grouped)
+    # Grade distribution
     grade_dist = defaultdict(int)
     for sub in submissions:
         g = (sub.grade or 'Ungraded').strip()
         grade_dist[g] += 1
     grade_dist = dict(grade_dist)
 
-    # Submission timeline: count per day
+    # Submission timeline
     timeline = defaultdict(int)
     for sub in submissions:
         day_key = sub.submitted_at.strftime('%b %d')
@@ -625,7 +633,6 @@ def faculty_assignment_detail(request, assignment_id):
         'profile': profile,
         'assignment': assignment,
         'submissions': submissions,
-        # Analytics
         'submitted_count': submitted_count,
         'total_enrolled': total_enrolled,
         'pending_count': pending_count,
@@ -640,9 +647,9 @@ def faculty_assignment_detail(request, assignment_id):
         'timeline_values_json': json.dumps(timeline_values),
     })
 
+
+@faculty_login_required
 def faculty_attendance_ai(request):
-    from django.http import JsonResponse
-    import json
     from langchain_google_genai import ChatGoogleGenerativeAI
     from langchain_core.messages import SystemMessage, HumanMessage
     from ai_assistant.utils import key_rotator
@@ -704,7 +711,7 @@ Do not include markdown formatting like ```json or any other text.
                 llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
                 resp = llm.invoke([SystemMessage(content="You are a helpful attendance assistant."), HumanMessage(content=prompt)])
                 output_text = resp.content.strip()
-                break  # Success
+                break
             except Exception as e:
                 error_msg = str(e)
                 if ("429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "Quota" in error_msg) and attempt < max_attempts - 1:
@@ -724,5 +731,5 @@ Do not include markdown formatting like ```json or any other text.
         return JsonResponse({'success': True, 'results': result_json.get('results', {})})
 
     except Exception as e:
+        logger.error(f"Faculty AI attendance error: {e}", exc_info=True)
         return JsonResponse({'success': False, 'error': str(e)})
-
