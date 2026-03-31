@@ -58,8 +58,8 @@ class Command(BaseCommand):
                 course_performance[code]['total'] += cd['theory']['total'] + cd['practical']['total']
                 course_performance[code]['present'] += cd['theory']['present'] + cd['practical']['present']
 
-            # 4. Check Threshold (Updated to 85.0% as per USER request)
-            if overall_pct < 85.0:
+            # 4. Check Threshold (Updated to 75.0% as per USER request)
+            if overall_pct < 75.0:
                 student.attendance_risk = True
                 student.save()
                 
@@ -85,7 +85,7 @@ Enrollment Number: {student.enrollment_number}
 Branch: {student.branch}
 Semester: {student.current_semester}
 
-Your ward's current overall attendance is {overall_pct}%, which is below the minimum required threshold of 85%.
+Your ward's current overall attendance is {overall_pct}%, which is below the minimum required threshold of 75%.
 
 Theory Attendance: {data['global_theory_pct']}%
 Practical Attendance: {data['global_practical_pct']}%
@@ -124,7 +124,7 @@ Academiq Management Portal
                     'Branch': student.branch,
                     'Section': student.section,
                     'Overall Attendance %': overall_pct,
-                    'Deficit %': round(85.0 - float(overall_pct), 1),
+                    'Deficit %': round(75.0 - float(overall_pct), 1),
                     'Parent Email': student.parent_email
                 })
             else:
@@ -223,7 +223,7 @@ Academiq AI Agent
 
         # 7. Global AI Summary for the Log
         global_prompt = f"""Summarize the overall attendance status for {log.students_analyzed} students. 
-Total at risk (<85%): {total_at_risk}.
+Total at risk (<75%): {total_at_risk}.
 Write a single, high-level summary sentence for the administration dashboard."""
         
         try:

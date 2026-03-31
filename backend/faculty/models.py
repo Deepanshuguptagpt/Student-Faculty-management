@@ -109,6 +109,24 @@ class AssignmentReminderLog(models.Model):
     def __str__(self):
         return f"{self.reminder_type} reminder for {self.student.user.name} - {self.assignment.title}"
 
+class FacultyAssignmentReportLog(models.Model):
+    REPORT_STAGES = [
+        ('50', '50% Milestone'),
+        ('75', '75% Milestone'),
+        ('90', '90% Milestone'),
+        ('final', 'Final Deadline Report'),
+    ]
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='faculty_report_logs')
+    faculty = models.ForeignKey(FacultyProfile, on_delete=models.CASCADE, related_name='assignment_reports')
+    report_stage = models.CharField(max_length=10, choices=REPORT_STAGES)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('assignment', 'faculty', 'report_stage')
+
+    def __str__(self):
+        return f"{self.report_stage} report for {self.faculty.user.name} - {self.assignment.title}"
+
 class SubjectNote(models.Model):
     title = models.CharField(max_length=250)
     description = models.TextField(null=True, blank=True)
