@@ -1,4 +1,4 @@
-﻿absl-py
+absl-py
 
 annotated-types
 
@@ -67,8 +67,6 @@ openpyxl
 orjson
 
 ormsgpack
-
-ortools
 
 packaging
 
