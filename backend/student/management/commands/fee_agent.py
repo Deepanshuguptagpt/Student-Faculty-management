@@ -9,7 +9,9 @@ from io import BytesIO
 from django.core.mail import send_mail, EmailMessage
 from backend.student.models import StudentProfile, FeeRecord, FeeMonitoringLog, FeeIntervention
 from backend.faculty.models import SectionCoordinator
-from core.ollama_utils import generate_ollama_insight
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import SystemMessage, HumanMessage
+from ai_assistant.utils import key_rotator
 
 class Command(BaseCommand):
     help = 'Runs the Agentic AI Fee Management Monitor weekly'
@@ -134,9 +136,28 @@ Academiq Management Portal
                 df.to_excel(writer, index=False, sheet_name='Pending Fee Students')
             excel_buffer.seek(0)
             
-            # 5b. Optional AI Insight for Coordinator
-            prompt = f"Summarize pending fees for {section} of {branch}. {len(students_list)} students have unpaid fees. Give a short action nudge for coordinator {coord_name}."
-            insight = generate_ollama_insight(prompt)
+            # 5b. Generate Section-wise AI Insight using Gemini
+            api_key = key_rotator.get_current_key()
+            llm_kwargs = {"model": "gemini-2.5-flash", "temperature": 0.7}
+            if api_key:
+                llm_kwargs["google_api_key"] = api_key
+            llm = ChatGoogleGenerativeAI(**llm_kwargs)
+
+            prompt = f"""You are the Academiq Fee Auditor. Analyze this data for Section {section}, Branch {branch}:
+Students with unpaid fees: {len(students_list)}
+Top 3 highest outstanding amounts: {[f"{s['Name']} (₹{s['Unpaid Amount']})" for s in students_list[:3]]}
+
+Provide a short, professional action nudge for Coordinator {coord_name} to help recover these dues. Keep it under 60 words."""
+            
+            try:
+                response = llm.invoke([
+                    SystemMessage(content="You are a financial academic advisor."),
+                    HumanMessage(content=prompt)
+                ])
+                insight = response.content.strip()
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"Gemini insight generation failed for fee report (section {section}): {e}"))
+                insight = "High number of pending dues detected. Immediate follow-up with these students is advised."
             
             # 5c. Send Email with Attachment
             email_body = f"""
@@ -168,9 +189,17 @@ Accounts Department
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Failed to send report for {section}: {str(e)}"))
 
-        # 6. Global AI Insight and Final Log
-        global_prompt = f"Fee audit complete. Found {total_pending_count} students with pending dues. Summarize the situation."
-        log.summary_insight = generate_ollama_insight(global_prompt)
+        # 6. Global AI Summary for the Log
+        global_prompt = f"Fee audit complete for {log.students_analyzed} students. Found {total_pending_count} students with pending dues. Summarize the financial risk in one short sentence."
+        
+        try:
+            response = llm.invoke([
+                SystemMessage(content="You are a senior university administrator."),
+                HumanMessage(content=global_prompt)
+            ])
+            log.summary_insight = response.content.strip()
+        except:
+            log.summary_insight = f"Audit complete. {total_pending_count} students have outstanding fee balances."
         log.overdue_students = total_pending_count
         log.emails_sent = emails_sent
         log.save()

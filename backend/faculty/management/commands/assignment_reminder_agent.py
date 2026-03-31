@@ -5,7 +5,9 @@ from django.core.mail import send_mail
 from django.conf import settings
 from backend.faculty.models import Assignment, AssignmentSubmission, AssignmentReminderLog
 from backend.student.models import Enrollment, StudentProfile
-
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import SystemMessage, HumanMessage
+from ai_assistant.utils import key_rotator
 class Command(BaseCommand):
     help = 'Sends reminder emails for upcoming assignments'
 
@@ -130,8 +132,36 @@ class Command(BaseCommand):
             'day_evening': "Evening Reminder: Just a few hours left for your submission.",
             'final': "CRITICAL: The deadline is in less than 3 hours! Submit now.",
         }
+        
+        status_context = reminder_labels.get(reminder_type, 'Your assignment is pending.')
 
-        message = f"""
+        # Agentic Generation using Gemini
+        api_key = key_rotator.get_current_key()
+        llm_kwargs = {"model": "gemini-2.5-flash", "temperature": 0.7}
+        if api_key:
+            llm_kwargs["google_api_key"] = api_key
+        llm = ChatGoogleGenerativeAI(**llm_kwargs)
+
+        prompt = f"""You are the Academiq AI Assistant. Write a short, encouraging, and professional email reminder to a student about their pending assignment.
+
+Student Name: {student.user.name}
+Course: {assignment.course.name} ({assignment.course.code})
+Assignment Title: {assignment.title}
+Deadline: {assignment.due_datetime.strftime('%B %d, %Y at %I:%M %p')}
+Reminder Context: {status_context}
+
+The email should be around 3-4 sentences. Do NOT include a subject line, just the email body starting with 'Dear {student.user.name}'. Sign off as 'Academiq AI Agent'."""
+
+        try:
+            response = llm.invoke([
+                SystemMessage(content="You are a helpful academic AI assistant."),
+                HumanMessage(content=prompt)
+            ])
+            message = response.content.strip()
+            self.stdout.write(f"Generated agentic email for {student.user.email}")
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f"LLM generation failed: {e}. Using fallback template."))
+            message = f"""
 Dear {student.user.name},
 
 This is a reminder from Academiq regarding your assignment submission.
@@ -140,7 +170,7 @@ Assignment: {assignment.title}
 Course: {assignment.course.name} ({assignment.course.code})
 Deadline: {assignment.due_datetime.strftime('%B %d, %Y at %I:%M %p')}
 
-Status: {reminder_labels.get(reminder_type, 'Your assignment is pending.')}
+Status: {status_context}
 
 Please ensure you submit your work on time to avoid any academic penalties.
 
@@ -148,7 +178,7 @@ You can submit your assignment by logging into the Academiq portal.
 
 Best Regards,
 Academiq AI Agent
-        """
+"""
         
         send_mail(
             subject,

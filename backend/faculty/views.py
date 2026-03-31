@@ -62,11 +62,85 @@ def faculty_dashboard(request):
                     course_id=course_id,
                     branch=branch,
                     year=year,
-                    due_datetime=selected_dt if due_datetime else None,
+                    due_datetime=selected_dt,
                     attachment=attachment,
                     submission_mode=submission_mode,
                 )
             return redirect('/faculty/dashboard/?tab=assignments')
+
+        # Handle POST request for extending deadline
+        if request.method == 'POST' and request.POST.get('action') == 'extend_deadline':
+            from .models import Assignment, AssignmentSubmission
+            from django.utils import timezone
+            import datetime
+            from django.core.mail import send_mail
+            from django.conf import settings
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            from langchain_core.messages import SystemMessage, HumanMessage
+            from ai_assistant.utils import key_rotator
+
+            assignment_id = request.POST.get('assignment_id')
+            new_due_date = request.POST.get('new_due_date')
+            assignment = Assignment.objects.filter(id=assignment_id, faculty=profile).first()
+
+            if assignment and new_due_date:
+                try:
+                    naive_dt = datetime.datetime.strptime(new_due_date, '%Y-%m-%dT%H:%M')
+                    new_dt = timezone.make_aware(naive_dt)
+                except:
+                    return redirect('/faculty/dashboard/?tab=assignments&error=Invalid date format')
+                
+                if new_dt <= timezone.now():
+                     return redirect('/faculty/dashboard/?tab=assignments&error=Extended deadline must be in the future.')
+
+                assignment.due_datetime = new_dt
+                assignment.save()
+
+                # Notify students who haven't submitted
+                enrolled_students = StudentProfile.objects.filter(branch=assignment.branch, enrollments__course=assignment.course).distinct()
+                for student in enrolled_students:
+                    if not AssignmentSubmission.objects.filter(assignment=assignment, student=student).exists():
+                        # Agentic Email Generation
+                        api_key = key_rotator.get_current_key()
+                        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+                        
+                        prompt = f"""Write a short, friendly notice to a student about a deadline extension.
+Student: {student.user.name}
+Assignment: {assignment.title}
+New Deadline: {new_dt.strftime('%B %d, %Y at %I:%M %p')}
+Tone: Professional and encouraging. 2-3 sentences. No subject line."""
+                        
+                        try:
+                            resp = llm.invoke([SystemMessage(content="You are the Academiq Assistant."), HumanMessage(content=prompt)])
+                            body = resp.content.strip()
+                        except:
+                            body = f"Dear {student.user.name}, the deadline for '{assignment.title}' has been extended to {new_dt.strftime('%B %d, %Y at %I:%M %p')}. Please ensure your submission is completed on time."
+
+                        send_mail(f"Deadline Extended: {assignment.title}", body, settings.DEFAULT_FROM_EMAIL, [student.user.email], fail_silently=True)
+
+                return redirect('/faculty/dashboard/?tab=assignments&extended=1')
+
+        # Handle POST request for uploading notes
+        if request.method == 'POST' and request.POST.get('action') == 'upload_note':
+            from .models import SubjectNote
+            title = request.POST.get('title')
+            description = request.POST.get('description')
+            course_id = request.POST.get('course_id')
+            branch = request.POST.get('branch')
+            year = request.POST.get('year')
+            file = request.FILES.get('file')
+
+            if title and course_id and branch and file:
+                SubjectNote.objects.create(
+                    faculty=profile,
+                    title=title,
+                    description=description,
+                    course_id=course_id,
+                    branch=branch,
+                    year=year,
+                    file=file,
+                )
+            return redirect('/faculty/dashboard/?tab=notes')
 
         
         assignments = FacultyCourseAssignment.objects.filter(faculty=profile)
@@ -127,7 +201,7 @@ def faculty_dashboard(request):
         courses = Course.objects.filter(id__in=my_course_ids)
         
         # Get assignment data
-        from .models import Assignment
+        from .models import Assignment, SubjectNote
         from backend.student.models import BRANCH_CHOICES
         
         assignment_list = Assignment.objects.filter(faculty=profile).order_by('-created_at')
@@ -145,7 +219,7 @@ def faculty_dashboard(request):
         if course_filter:
             assignment_list = assignment_list.filter(course_id=course_filter)
         
-        year_choices = ['1st year', '2nd year', '3rd year', '4th year']
+        year_choices = ['1st Year', '2nd Year', '3rd Year', '4th Year']
         
         context = {
             'profile': profile,
@@ -173,11 +247,12 @@ def faculty_dashboard(request):
             'attendance_stats_json': json.dumps({
                 'labels': [d['course'].code for d in analytics_data],
                 'values': [
-                    (sum(s['attendance_percent'] for s in d['student_stats']) / len(d['student_stats'])) 
-                    if d['student_stats'] else 0 
+                    (sum(s['attendance_percent'] for s in d['student_stats']) / len(d['student_stats']))
+                    if d['student_stats'] else 0
                     for d in analytics_data
                 ]
-            })
+            }),
+            'notes_list': SubjectNote.objects.filter(faculty=profile).order_by('-uploaded_at'),
         }
         return render(request, "dashboards/faculty/overview_new.html", context)
     except Exception as e:

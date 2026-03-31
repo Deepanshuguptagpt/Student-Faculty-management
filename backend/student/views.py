@@ -23,7 +23,7 @@ def student_dashboard(request):
         academic_records = AcademicRecord.objects.filter(student=student_profile)
 
         # Calculate pending assignments for notification count
-        from backend.faculty.models import Assignment, AssignmentSubmission
+        from backend.faculty.models import Assignment, AssignmentSubmission, SubjectNote
         for enrollment in enrollments:
             total_assignments = Assignment.objects.filter(course=enrollment.course, branch=student_profile.branch).count()
             submitted_count = AssignmentSubmission.objects.filter(
@@ -47,6 +47,7 @@ def student_dashboard(request):
             'records': academic_records,  # For grades tab
             'total_due': total_due,
             'total_paid': total_paid,
+            'notes_list': SubjectNote.objects.filter(branch=student_profile.branch, year=student_profile.current_year).order_by('-uploaded_at'),
         }
         return render(request, "dashboards/student/overview_new.html", context)
     except Exception as e:

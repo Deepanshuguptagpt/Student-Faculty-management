@@ -63,6 +63,7 @@
             <button class="tab-btn" onclick="switchTab('courses')">Courses</button>
             <button class="tab-btn" onclick="switchTab('grades')">Grades</button>
             <button class="tab-btn" onclick="switchTab('fees')">Fees</button>
+            <button class="tab-btn" onclick="switchTab('notes')">Study Material</button>
         </div>
 
         <div id="attendance-tab" class="tab-content active">
@@ -185,6 +186,39 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        <!-- Subject Notes (Study Material) Tab -->
+        <div id="notes-tab" class="tab-content">
+            <h3 style="margin-bottom: 20px;">Study Material & Subject Notes</h3>
+            {% if notes_list %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                {% for note in notes_list %}
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <span style="background: #E0E7FF; color: #3730A3; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">{{ note.course.code }}</span>
+                        <span style="color: #94A3B8; font-size: 11px;">{{ note.uploaded_at|date:"M d, Y" }}</span>
+                    </div>
+                    <h4 style="margin: 0 0 8px 0; color: #1E293B; font-size: 16px;">{{ note.title }}</h4>
+                    {% if note.description %}
+                    <p style="color: #64748B; font-size: 13px; margin-bottom: 16px; line-height: 1.5;">{{ note.description|truncatechars:100 }}</p>
+                    {% endif %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 24px; height: 24px; background: #EEF2FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #4F46E5;">{{ note.faculty.user.name|first }}</div>
+                            <span style="color: #475569; font-size: 12px;">Prof. {{ note.faculty.user.name }}</span>
+                        </div>
+                        <a href="{{ note.file.url }}" target="_blank" style="background: #4F46E5; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">Download</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: #94A3B8; background: #F8FAFC; border-radius: 12px; border: 2px dashed #E2E8F0;">
+                <div style="font-size: 32px; margin-bottom: 10px;">📚</div>
+                <p>No study material uploaded for your branch/year yet.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 

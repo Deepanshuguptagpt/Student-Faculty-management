@@ -43,10 +43,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    function formatText(text) {
+        if (!text) return '';
+        // Convert **bold** to <strong>bold</strong>
+        let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Convert bullet points (* item) to bullet symbol
+        formatted = formatted.replace(/(?:^|\n)\s*\*\s+(.*?)(?=\n|$)/g, '<br>• $1');
+        // Convert remaining newlines to breaks
+        formatted = formatted.replace(/\n/g, '<br>');
+        return formatted;
+    }
+
     function addMessage(text, role) {
         const div = document.createElement('div');
         div.className = `message ${role}`;
-        div.textContent = text;
+        if (role === 'assistant') {
+            div.innerHTML = formatText(text);
+        } else {
+            div.textContent = text;
+        }
         chatMessages.appendChild(div);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }

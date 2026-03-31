@@ -9,7 +9,9 @@ from django.core.mail import send_mail, EmailMessage
 from backend.student.models import StudentProfile, AttendanceMonitoringLog, AttendanceIntervention
 from backend.faculty.models import SectionCoordinator
 from backend.student.utils import calculate_detailed_attendance
-from core.ollama_utils import generate_ollama_insight
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import SystemMessage, HumanMessage
+from ai_assistant.utils import key_rotator
 
 class Command(BaseCommand):
     help = 'Runs the Agentic AI Attendance Monitor every 15 days'
@@ -163,10 +165,28 @@ Academiq Management Portal
                 df.to_excel(writer, index=False, sheet_name='At Risk Students')
             excel_buffer.seek(0)
             
-            # 6b. Generate Section-wise AI Insights (Optional but better)
-            section_summary = f"Section: {section}, Branch: {branch}\nStudents at risk: {len(students_list)}"
-            section_prompt = f"Provide 2 quick actionable insights for coordinator {coord_name} regarding these {len(students_list)} at-risk students in {section}."
-            section_insight = generate_ollama_insight(section_prompt)
+            # 6b. Generate Section-wise AI Insights using Gemini
+            api_key = key_rotator.get_current_key()
+            llm_kwargs = {"model": "gemini-2.5-flash", "temperature": 0.7}
+            if api_key:
+                llm_kwargs["google_api_key"] = api_key
+            llm = ChatGoogleGenerativeAI(**llm_kwargs)
+
+            section_prompt = f"""You are the Academiq Attendance Auditor. Analyze this data for Section {section}, Branch {branch}:
+Students at risk: {len(students_list)}
+Top 3 lowest attendance in this section: {[f"{s['Name']} ({s['Overall Attendance %']}%)" for s in students_list[:3]]}
+
+Provide 2-3 quick, actionable, professional insights for Coordinator {coord_name}. Ensure the tone is analytical yet supportive. Keep it under 100 words."""
+            
+            try:
+                response = llm.invoke([
+                    SystemMessage(content="You are an expert academic data analyst."),
+                    HumanMessage(content=section_prompt)
+                ])
+                section_insight = response.content.strip()
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"Gemini insight generation failed for section {section}: {e}"))
+                section_insight = "Monitoring indicates several students are below the mandatory threshold. Immediate counseling is recommended."
             
             # 6c. Send Email with Attachment
             email_body = f"""
@@ -201,9 +221,20 @@ Academiq AI Agent
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Failed to send report for {section}: {str(e)}"))
 
-        # 7. Global AI Insights for the Log
-        global_prompt = f"Total students analyzed: {log.students_analyzed}. Total at risk: {total_at_risk}. Provide a one-sentence overview."
-        log.summary_insight = generate_ollama_insight(global_prompt)
+        # 7. Global AI Summary for the Log
+        global_prompt = f"""Summarize the overall attendance status for {log.students_analyzed} students. 
+Total at risk (<85%): {total_at_risk}.
+Write a single, high-level summary sentence for the administration dashboard."""
+        
+        try:
+            response = llm.invoke([
+                SystemMessage(content="You are an academic administrator."),
+                HumanMessage(content=global_prompt)
+            ])
+            log.summary_insight = response.content.strip()
+        except:
+            log.summary_insight = f"Analysis complete for {log.students_analyzed} students. {total_at_risk} identified as at-risk."
+
         log.students_at_risk = total_at_risk
 
         # 9. Update Log

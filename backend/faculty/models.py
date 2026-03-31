@@ -108,3 +108,16 @@ class AssignmentReminderLog(models.Model):
 
     def __str__(self):
         return f"{self.reminder_type} reminder for {self.student.user.name} - {self.assignment.title}"
+
+class SubjectNote(models.Model):
+    title = models.CharField(max_length=250)
+    description = models.TextField(null=True, blank=True)
+    faculty = models.ForeignKey(FacultyProfile, on_delete=models.CASCADE, related_name='uploaded_notes')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_notes')
+    branch = models.CharField(max_length=100, choices=BRANCH_CHOICES)
+    year = models.CharField(max_length=20, null=True, blank=True)
+    file = models.FileField(upload_to='notes/materials/', help_text="Upload notes in PDF, DOCX, or PPT format")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.course.code}"
