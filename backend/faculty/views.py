@@ -677,14 +677,14 @@ The faculty provided the following natural language instruction: "{instruction}"
 Here is the list of enrolled students:
 {student_list_str}
 
-Based on the instruction, determine the attendance status ('Present' or 'Absent') for EACH student in the list.
+Based on the instruction, determine the attendance status ('Present' or 'Absent') ONLY for students explicitly or implicitly mentioned.
 Strict Rules for determining status:
-1. If the instruction explicitly names who is ABSENT (e.g., "mark X absent"), assume everyone else is 'Present'.
-2. If the instruction explicitly names who is PRESENT (e.g., "mark Y present"), assume everyone else is 'Absent'.
-3. If the instruction says "all present" or similar, mark all as 'Present'.
-4. If the instruction says "all absent", mark all as 'Absent'.
-5. Do your best to fuzzy-match misspelled names from the instruction to the list of enrolled students.
-6. If the instruction contains numbers (e.g., "mark 23 and 45 absent"), match those numbers exactly to the LAST few digits of the students' Enrollment numbers.
+1. ONLY return the IDs of students whose attendance needs to be updated based on the instruction.
+2. If the instruction says "mark X absent" and doesn't mention the rest, ONLY return student X with status 'Absent'. Do NOT return statuses for anyone else.
+3. If the instruction says "mark Y present" and doesn't mention the rest, ONLY return student Y with status 'Present'.
+4. If the instruction says "mark X absent, rest all present", then return student X as 'Absent' AND explicitly return all other students as 'Present'.
+5. If the instruction contains numbers (e.g., "mark 23 and 45 absent"), match those numbers exactly to the LAST few digits of the students' Enrollment numbers.
+6. Do your best to fuzzy-match misspelled names from the instruction to the list of enrolled students.
 
 Respond ONLY with a valid JSON format exactly like:
 {{
@@ -693,7 +693,7 @@ Respond ONLY with a valid JSON format exactly like:
     "student_id_2": "Absent"
   }}
 }}
-Ensure every single student ID from the list is included in the output JSON. Do not include markdown formatting like ```json or any other text.
+Do not include markdown formatting like ```json or any other text.
 """
         max_attempts = len(key_rotator.keys) if hasattr(key_rotator, 'keys') and key_rotator.keys else 1
         output_text = ""
