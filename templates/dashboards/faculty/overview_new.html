@@ -165,6 +165,21 @@
                         <input type="file" name="attachment" accept=".pdf,.doc,.docx" style="width: 100%; padding: 8px; border: 2px solid #E2E8F0; border-radius: 8px;">
                         <small style="color: #64748B; font-size: 11px;">Max size 5MB. PDF, Word documents only.</small>
                     </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Submission Mode *</label>
+                        <div style="display: flex; gap: 16px; margin-top: 4px;">
+                            <label style="display: flex; align-items: center; gap: 7px; cursor: pointer; font-weight: 500; color: #333; font-size: 14px;">
+                                <input type="radio" name="submission_mode" value="online" checked
+                                       style="accent-color: #4F46E5; width: 16px; height: 16px;">
+                                🌐 Online (via Portal)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 7px; cursor: pointer; font-weight: 500; color: #333; font-size: 14px;">
+                                <input type="radio" name="submission_mode" value="offline"
+                                       style="accent-color: #4F46E5; width: 16px; height: 16px;">
+                                📁 Offline (Physical)
+                            </label>
+                        </div>
+                    </div>
                     <div style="grid-column: span 2;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Description / Instructions</label>
                         <textarea name="description" rows="3" placeholder="Enter assignment description..." style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;"></textarea>
@@ -222,6 +237,7 @@
                     <th>Course</th>
                     <th>Branch</th>
                     <th>Year</th>
+                    <th>Mode</th>
                     <th>Due Date</th>
                     <th>Submissions</th>
                     <th>Actions</th>
@@ -234,6 +250,13 @@
                     <td><span style="background: #E0E7FF; color: #3730A3; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.course.code }}</span></td>
                     <td><span style="background: #F3E8FF; color: #6B21A8; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.branch }}</span></td>
                     <td><span style="background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{{ a.year|default:"N/A" }}</span></td>
+                    <td>
+                        {% if a.submission_mode == 'online' %}
+                        <span style="background: #E3F2FD; color: #1565C0; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">🌐 Online</span>
+                        {% else %}
+                        <span style="background: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">📁 Offline</span>
+                        {% endif %}
+                    </td>
                     <td>{{ a.due_datetime|date:"M d, Y H:i"|default:"No due date" }}</td>
                     <td>
                         <span style="background: #E8F5E9; color: #2E7D32; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
