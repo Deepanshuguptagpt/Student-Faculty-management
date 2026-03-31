@@ -257,12 +257,58 @@ def get_student_agent(student_id):
 
         return "\n".join(lines)
 
+    # ─── TOOL 5: Attendance on a Specific Date ─────────────────────────────────
+    @tool
+    def get_my_attendance_on_date(date_str: str) -> str:
+        """
+        Get the student's attendance record for a specific date, showing each
+        lecture they attended or missed, grouped by course.
+        Input: date_str — the date to check (e.g., '2026-03-25', 'March 25').
+        Use for: 'Was I absent on March 25?', 'Which lectures did I miss on Monday?',
+        'Show my attendance on 2026-03-20', 'In what lectures was I absent on March 25?'
+        """
+        try:
+            from dateutil import parser
+            dt = parser.parse(date_str).date()
+        except Exception:
+            return f"Could not understand the date '{date_str}'. Please use a format like YYYY-MM-DD or 'March 25'."
+
+        records = Attendance.objects.filter(
+            student=student, date=dt
+        ).select_related('course').order_by('lecture_number')
+
+        if not records.exists():
+            return f"No attendance records found for you on {dt}. Either it was a holiday or attendance wasn't marked."
+
+        present_list = []
+        absent_list = []
+        for r in records:
+            entry = f"  Lecture {r.lecture_number} — {r.course.code} ({r.course.name})"
+            if r.status == 'Present':
+                present_list.append(entry)
+            else:
+                absent_list.append(entry)
+
+        lines = [f"Your attendance on {dt}:"]
+
+        if absent_list:
+            lines.append(f"\n❌ Absent ({len(absent_list)} lecture(s)):")
+            lines.extend(absent_list)
+
+        if present_list:
+            lines.append(f"\n✅ Present ({len(present_list)} lecture(s)):")
+            lines.extend(present_list)
+
+        lines.append(f"\nTotal: {len(present_list)} present, {len(absent_list)} absent out of {len(records)} lectures.")
+        return "\n".join(lines)
+
     # ─── Build and return the agent ───────────────────────────────────────────
     tools = [
-        check_my_attendance, 
-        check_pending_assignments, 
+        check_my_attendance,
+        check_pending_assignments,
         check_my_fee_status,
-        get_my_academic_summary
+        get_my_academic_summary,
+        get_my_attendance_on_date,
     ]
 
     system_prompt = (
@@ -272,7 +318,8 @@ def get_student_agent(student_id):
         f"- Attendance / which subject is low? -> check_my_attendance\n"
         f"- What assignments are due / pending? -> check_pending_assignments\n"
         f"- Fee status / dues / payments -> check_my_fee_status\n"
-        f"- General 'how am I doing?' -> get_my_academic_summary\n\n"
+        f"- General 'how am I doing?' -> get_my_academic_summary\n"
+        f"- 'Was I absent on [date]?' / 'Which lectures did I miss on [date]?' -> get_my_attendance_on_date\n\n"
         f"Always call the appropriate tool — never guess or fabricate data. "
         f"Be supportive and specific. Highlight what needs immediate attention."
     )
