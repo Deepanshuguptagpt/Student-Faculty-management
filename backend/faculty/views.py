@@ -102,7 +102,7 @@ def faculty_dashboard(request):
                     if not AssignmentSubmission.objects.filter(assignment=assignment, student=student).exists():
                         # Agentic Email Generation
                         api_key = key_rotator.get_current_key()
-                        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+                        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
                         
                         prompt = f"""Write a short, friendly notice to a student about a deadline extension.
 Student: {student.user.name}
@@ -639,3 +639,90 @@ def faculty_assignment_detail(request, assignment_id):
         'timeline_labels_json': json.dumps(timeline_labels),
         'timeline_values_json': json.dumps(timeline_values),
     })
+
+def faculty_attendance_ai(request):
+    from django.http import JsonResponse
+    import json
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_core.messages import SystemMessage, HumanMessage
+    from ai_assistant.utils import key_rotator
+    from backend.student.models import Enrollment
+    
+    profile = get_faculty_profile(request)
+    if not profile or request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request'})
+    
+    try:
+        data = json.loads(request.body)
+        instruction = data.get('instruction')
+        course_id = data.get('course_id')
+
+        if not instruction or not course_id:
+            return JsonResponse({'success': False, 'error': 'Missing instruction or course_id'})
+
+        enrollments = Enrollment.objects.filter(course_id=course_id).select_related('student__user')
+        student_data = []
+        for en in enrollments:
+            student_data.append({
+                "id": str(en.student.id),
+                "name": en.student.user.name,
+                "enrollment_number": en.student.enrollment_number
+            })
+            
+        student_list_str = "\n".join([f"ID: {s['id']}, Name: {s['name']}, Enrollment: {s['enrollment_number']}" for s in student_data])
+
+        prompt = f"""You are an AI assistant helping a faculty member mark attendance.
+The faculty provided the following natural language instruction: "{instruction}"
+
+Here is the list of enrolled students:
+{student_list_str}
+
+Based on the instruction, determine the attendance status ('Present' or 'Absent') for EACH student in the list.
+Strict Rules for determining status:
+1. If the instruction explicitly names who is ABSENT (e.g., "mark X absent"), assume everyone else is 'Present'.
+2. If the instruction explicitly names who is PRESENT (e.g., "mark Y present"), assume everyone else is 'Absent'.
+3. If the instruction says "all present" or similar, mark all as 'Present'.
+4. If the instruction says "all absent", mark all as 'Absent'.
+5. Do your best to fuzzy-match misspelled names from the instruction to the list of enrolled students.
+6. If the instruction contains numbers (e.g., "mark 23 and 45 absent"), match those numbers exactly to the LAST few digits of the students' Enrollment numbers.
+
+Respond ONLY with a valid JSON format exactly like:
+{{
+  "results": {{
+    "student_id_1": "Present",
+    "student_id_2": "Absent"
+  }}
+}}
+Ensure every single student ID from the list is included in the output JSON. Do not include markdown formatting like ```json or any other text.
+"""
+        max_attempts = len(key_rotator.keys) if hasattr(key_rotator, 'keys') and key_rotator.keys else 1
+        output_text = ""
+        
+        for attempt in range(max_attempts):
+            try:
+                api_key = key_rotator.get_current_key()
+                llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
+                resp = llm.invoke([SystemMessage(content="You are a helpful attendance assistant."), HumanMessage(content=prompt)])
+                output_text = resp.content.strip()
+                break  # Success
+            except Exception as e:
+                error_msg = str(e)
+                if ("429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "Quota" in error_msg) and attempt < max_attempts - 1:
+                    key_rotator.rotate()
+                    continue
+                else:
+                    raise e
+        
+        if output_text.startswith("```json"):
+            output_text = output_text[7:]
+        if output_text.startswith("```"):
+            output_text = output_text[3:]
+        if output_text.endswith("```"):
+            output_text = output_text[:-3]
+            
+        result_json = json.loads(output_text.strip())
+        return JsonResponse({'success': True, 'results': result_json.get('results', {})})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+

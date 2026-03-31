@@ -5,51 +5,56 @@
 {% block content %}
 <div class="card">
     <h3>Select Course Form</h3>
-    <form method="GET" action="">
-        <div style="margin-bottom: 15px;">
-            <label for="course_id" style="display: block; margin-bottom: 5px;">Course:</label>
-            <select name="course_id" id="course_id"
-                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;" required>
-                <option value="">-- Select Course --</option>
-                <optgroup label="My Specializations / Can Teach">
-                    {% for c in my_courses %}
-                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
-                        {{ c.code }} - {{ c.name }}
+    <form method="GET" action="" style="margin-bottom: 35px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; align-items: stretch;">
+            <div style="display: flex; flex-direction: column; position: relative; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; justify-content: flex-end;">
+                <label for="course_id" style="margin-bottom: 8px; font-weight: 600; font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Course Selection</label>
+                <select name="course_id" id="course_id"
+                    style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; color: #1e293b; background: white;" required>
+                    <option value="">-- Select Course --</option>
+                    <optgroup label="My Specializations / Can Teach">
+                        {% for c in my_courses %}
+                        <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+                            {{ c.code }} - {{ c.name }}
+                        </option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="Other Courses (Extra/Swapped)">
+                        {% for c in other_courses %}
+                        <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+                            {{ c.code }} - {{ c.name }}
+                        </option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </div>
+
+            <div style="display: flex; flex-direction: column; position: relative; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; justify-content: flex-end;">
+                <label for="date_filter" style="margin-bottom: 8px; font-weight: 600; font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Date</label>
+                <input type="date" name="date" id="date_filter" value="{{ selected_date|default:'' }}" required
+                    style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; color: #1e293b; background: white;">
+                <small style="color: #64748b; font-size: 11px; position: absolute; bottom: -22px; left: 8px; white-space: nowrap;">Only current & previous dates</small>
+            </div>
+
+            <div style="display: flex; flex-direction: column; position: relative; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; justify-content: flex-end;">
+                <label for="lecture_number_filter" style="margin-bottom: 8px; font-weight: 600; font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Lecture Number</label>
+                <select name="lecture_number" id="lecture_number_filter" required
+                    style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; color: #1e293b; background: white;">
+                    <option value="">-- Select Lecture --</option>
+                    {% for i in "1234567"|make_list %}
+                    <option value="{{ i }}" {% if selected_lecture|stringformat:"s"  ==  i  %}selected{% endif %}>Lecture {{ i }}
                     </option>
                     {% endfor %}
-                </optgroup>
-                <optgroup label="Other Courses (Extra/Swapped)">
-                    {% for c in other_courses %}
-                    <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
-                        {{ c.code }} - {{ c.name }}
-                    </option>
-                    {% endfor %}
-                </optgroup>
-            </select>
-        </div>
+                </select>
+            </div>
 
-        <div style="margin-bottom: 15px;">
-            <label for="date_filter" style="display: block; margin-bottom: 5px;">Date:</label>
-            <input type="date" name="date" id="date_filter" value="{{ selected_date|default:'' }}" required
-                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-            <small style="color: #64748b; font-size: 12px; display: block; margin-top: 4px;">Only current and previous dates (excluding Sundays)</small>
+            <div style="display: flex; align-items: stretch; height: 100%;">
+                <button type="submit"
+                    style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; padding: 16px 24px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 15px; width: 100%; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 15px rgba(37, 99, 235, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(37, 99, 235, 0.2)';">
+                    Load Students
+                </button>
+            </div>
         </div>
-
-        <div style="margin-bottom: 15px;">
-            <label for="lecture_number_filter" style="display: block; margin-bottom: 5px;">Lecture Number:</label>
-            <select name="lecture_number" id="lecture_number_filter" required
-                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-                <option value="">-- Select Lecture --</option>
-                {% for i in "1234567"|make_list %}
-                <option value="{{ i }}" {% if selected_lecture|stringformat:"s"  ==  i  %}selected{% endif %}>Lecture {{ i }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <button type="submit"
-            style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Load
-            Students</button>
     </form>
 </div>
 
@@ -128,6 +133,22 @@
         </p>
 
         {% if students_data %}
+        <div style="margin-bottom: 25px; padding: 20px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <p style="margin-top: 0; font-weight: 600; color: #166534; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                AI Attendance Assistant
+            </p>
+            <p style="font-size: 14px; color: #15803d; margin-bottom: 12px;">Type a natural language instruction to automatically mark attendance. For example: "Mark shivam and deepanshu absent, rest all present."</p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <input type="text" id="ai_instruction" name="ai_instruction" placeholder="Enter your instructions here..." style="flex: 1; min-width: 250px; padding: 12px; border-radius: 8px; border: 1px solid #86efac; outline: none; font-size: 14px; background: white; color: #166534;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); processAIAttendance(); }">
+                <button type="button" onclick="processAIAttendance()" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px rgba(22, 163, 74, 0.2); transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(22, 163, 74, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(22, 163, 74, 0.2)';">Process with AI</button>
+            </div>
+            <div id="ai_loading" style="display: none; margin-top: 12px; color: #15803d; font-size: 14px; font-weight: 500;">
+                <span class="spinner" style="display: inline-block; width: 14px; height: 14px; border: 2px solid #15803d; border-right-color: transparent; border-radius: 50%; animation: spin 0.75s linear infinite; margin-right: 6px; vertical-align: middle;"></span>
+                Processing your request...
+            </div>
+        </div>
+        <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
         <table>
             <thead>
                 <tr>
@@ -235,6 +256,68 @@
             absentLabel.style.color = '#ef4444';
             presentLabel.style.color = '#94a3b8';
         }
+    }
+
+    function processAIAttendance() {
+        const instructionInput = document.getElementById('ai_instruction');
+        const instruction = instructionInput.value.trim();
+        if (!instruction) {
+            alert("Please enter an instruction.");
+            instructionInput.focus();
+            return;
+        }
+        
+        document.getElementById('ai_loading').style.display = 'block';
+        const courseId = document.querySelector("input[name='course_id']").value;
+
+        fetch('/faculty/dashboard/attendance/ai/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                instruction: instruction,
+                course_id: courseId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('ai_loading').style.display = 'none';
+            if (data.success) {
+                let changedCount = 0;
+                for (const [studentId, status] of Object.entries(data.results)) {
+                    const statusInput = document.getElementById('status_' + studentId);
+                    if (statusInput) {
+                        const toggleContainer = statusInput.closest('td').querySelector('.toggle-container');
+                        if (toggleContainer) {
+                            const checkbox = toggleContainer.querySelector('input[type="checkbox"]');
+                            if (checkbox) {
+                                if (status === 'Present' && !checkbox.checked) {
+                                    checkbox.checked = true;
+                                    toggleAttendance(studentId, checkbox);
+                                    changedCount++;
+                                } else if (status === 'Absent' && checkbox.checked) {
+                                    checkbox.checked = false;
+                                    toggleAttendance(studentId, checkbox);
+                                    changedCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+                instructionInput.value = '';
+                instructionInput.placeholder = `Successfully updated records!`;
+                setTimeout(() => { instructionInput.placeholder = "Enter your instructions here..."; }, 3000);
+            } else {
+                alert("Error processing AI instruction: " + data.error);
+            }
+        })
+        .catch(err => {
+            document.getElementById('ai_loading').style.display = 'none';
+            alert("An error occurred while communicating with the AI agent.");
+            console.error(err);
+        });
     }
 </script>
 {% endblock %}
