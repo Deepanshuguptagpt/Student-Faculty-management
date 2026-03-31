@@ -275,12 +275,66 @@ def get_faculty_agent(faculty_id):
         ]
         return "\n".join(lines)
 
+    # ─── TOOL 5: Attendance List Query ────────────────────────────────────────
+    @tool
+    def get_attendance_list(date_str: str, lecture_number: str, status: str = "Absent", course_code: str = None) -> str:
+        """
+        Get a list of students who were either 'Present' or 'Absent' on a specific date and lecture.
+        Input: 
+            date_str: The date (e.g., '2026-03-25').
+            lecture_number: The lecture number (e.g., '3').
+            status: Either 'Present' or 'Absent' (default is 'Absent').
+            course_code: Optional course code to filter further.
+        Use for: 'Who was absent on March 25th in my 3rd lecture?', 'List present students for AL-401'.
+        """
+        from datetime import datetime
+        try:
+            # Flexible date parsing — use dateutil if available
+            from dateutil import parser
+            dt = parser.parse(date_str).date()
+        except:
+            return f"Invalid date format: '{date_str}'. Please use YYYY-MM-DD or a clear date name."
+
+        status_cap = status.strip().capitalize()
+        if status_cap not in ['Present', 'Absent']:
+            status_cap = 'Absent' # fallback
+
+        # Base query for attendance
+        query = Attendance.objects.filter(
+            date=dt,
+            lecture_number=int(lecture_number),
+            status=status_cap,
+            course_id__in=assigned_course_ids
+        ).select_related('student__user', 'course')
+
+        if course_code:
+            query = query.filter(course__code__iexact=course_code.strip())
+
+        if not query.all().exists():
+            return f"No students were marked as '{status_cap}' on {dt} for lecture {lecture_number} in your courses."
+
+        # Group by course for clarity
+        results_by_course = {}
+        for att in query:
+            c_name = f"{att.course.code} - {att.course.name}"
+            if c_name not in results_by_course:
+                results_by_course[c_name] = []
+            results_by_course[c_name].append(f"  - {att.student.user.name} ({att.student.enrollment_number})")
+
+        output_lines = [f"Students marked as '{status_cap}' on {dt} (Lecture {lecture_number}):"]
+        for course, students in results_by_course.items():
+            output_lines.append(f"\nCourse: {course}")
+            output_lines.extend(students)
+
+        return "\n".join(output_lines)
+
     # ─── Build and return the agent ───────────────────────────────────────────
     tools = [
         get_low_attendance_students,
         get_struggling_students,
         get_course_performance,
         get_student_profile,
+        get_attendance_list,
     ]
 
     taught_codes = ", ".join(
@@ -298,6 +352,7 @@ def get_faculty_agent(faculty_id):
         f"- 'Who is falling behind / struggling?' -> get_struggling_students\n"
         f"- 'How is course X doing?' -> get_course_performance (pass course code)\n"
         f"- 'Tell me about student [enrollment]' -> get_student_profile\n"
+        f"- 'Who was present/absent on [date] in lecture [number]?' -> get_attendance_list\n"
         f"Always be specific, data-driven, and professional."
     )
 
