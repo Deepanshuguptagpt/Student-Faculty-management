@@ -69,7 +69,7 @@ def faculty_dashboard(request):
                     })
 
             if title and course_id and branch:
-                Assignment.objects.create(
+                assignment = Assignment.objects.create(
                     faculty=profile,
                     title=title,
                     description=description,
@@ -80,6 +80,20 @@ def faculty_dashboard(request):
                     attachment=attachment,
                     submission_mode=submission_mode,
                 )
+                
+                # Notify enrolled students
+                from django.core.mail import send_mail
+                from django.conf import settings
+                from backend.student.models import StudentProfile
+                
+                enrolled_students = StudentProfile.objects.filter(branch=branch, enrollments__course_id=course_id).distinct()
+                faculty_name = profile.user.name
+                
+                for student in enrolled_students:
+                    subject = f"New Assignment Uploaded: {title}"
+                    message = f"Dear {student.user.name},\n\nA new assignment '{title}' has been uploaded by {faculty_name}.\n\nPlease check your dashboard for more details and the due date.\n\nBest regards,\nAcademiq Portal"
+                    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [student.user.email], fail_silently=True)
+
             return redirect('/faculty/dashboard/?tab=assignments')
 
         # Handle POST request for extending deadline
@@ -454,7 +468,7 @@ def faculty_assignments(request):
         
         if title and course_id and branch:
             from .models import Assignment
-            Assignment.objects.create(
+            assignment = Assignment.objects.create(
                 faculty=profile,
                 title=title,
                 description=description,
@@ -465,6 +479,20 @@ def faculty_assignments(request):
                 attachment=attachment,
                 submission_mode=submission_mode,
             )
+            
+            # Notify enrolled students
+            from django.core.mail import send_mail
+            from django.conf import settings
+            from backend.student.models import StudentProfile
+            
+            enrolled_students = StudentProfile.objects.filter(branch=branch, enrollments__course_id=course_id).distinct()
+            faculty_name = profile.user.name
+            
+            for student in enrolled_students:
+                subject = f"New Assignment Uploaded: {title}"
+                message = f"Dear {student.user.name},\n\nA new assignment '{title}' has been uploaded by {faculty_name}.\n\nPlease check your dashboard for more details and the due date.\n\nBest regards,\nAcademiq Portal"
+                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [student.user.email], fail_silently=True)
+                
         return redirect('faculty_assignments')
 
         
