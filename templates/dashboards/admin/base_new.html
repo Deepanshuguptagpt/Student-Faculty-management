@@ -6,6 +6,18 @@
     <title>Admin Portal - {% block title %}Dashboard{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- UX Enhancements: NProgress & SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Prevent FOUC for Dark Mode -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark-theme');
+        }
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -210,13 +222,59 @@
                 <h1 style="margin: 0;">Academiq</h1>
             </a>
         </div>
-        <a href="/auth/logout/" class="btn-logout">Logout</a>
+        <div class="user-section" style="display: flex; align-items: center; gap: 20px;">
+            <div class="theme-toggle" id="theme-toggle" title="Toggle Dark Mode">
+                🌙
+            </div>
+            <a href="/auth/logout/" class="btn-logout">Logout</a>
+        </div>
     </div>
 
     <div class="dashboard-container">
         {% block content %}
         {% endblock %}
     </div>
+
+    <script>
+        // Initialize NProgress
+        NProgress.configure({ showSpinner: false });
+        NProgress.start();
+        window.addEventListener('load', function() {
+            NProgress.done();
+        });
+
+        // Theme Toggle Logic
+        const themeToggle = document.getElementById('theme-toggle');
+        if (localStorage.getItem('theme') === 'dark') {
+            themeToggle.textContent = '☀️';
+        }
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark-theme');
+            const isDark = document.documentElement.classList.contains('dark-theme');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeToggle.textContent = isDark ? '☀️' : '🌙';
+        });
+
+        // Toast Notifications
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        {% if error %}
+        Toast.fire({
+            icon: 'error',
+            title: '{{ error|escapejs }}'
+        });
+        {% endif %}
+    </script>
 
     {% block extra_js %}{% endblock %}
 

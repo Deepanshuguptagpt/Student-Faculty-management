@@ -35,7 +35,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: 
+    background:
         radial-gradient(circle at 20% 50%, rgba(0, 183, 195, 0.15) 0%, transparent 50%),
         radial-gradient(circle at 80% 80%, rgba(255, 140, 0, 0.15) 0%, transparent 50%),
         radial-gradient(circle at 40% 20%, rgba(135, 100, 184, 0.15) 0%, transparent 50%);
@@ -44,8 +44,15 @@ body::before {
 }
 
 @keyframes backgroundShift {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
 }
 
 /* Landing Page Styles */
@@ -74,6 +81,7 @@ body::before {
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -99,7 +107,8 @@ h1 {
 }
 
 /* Modern Button Styles */
-button, .btn {
+button,
+.btn {
     background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
     color: white;
     border: none;
@@ -115,13 +124,15 @@ button, .btn {
     display: inline-block;
 }
 
-button:hover, .btn:hover {
+button:hover,
+.btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 120, 212, 0.4);
     background: linear-gradient(135deg, var(--primary-dark), var(--primary-blue));
 }
 
-button:active, .btn:active {
+button:active,
+.btn:active {
     transform: translateY(0);
 }
 
@@ -139,7 +150,18 @@ button:active, .btn:active {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    animation: fadeInUp 0.6s ease;
+    animation: fadeInUpCenter 0.6s ease forwards;
+}
+
+@keyframes fadeInUpCenter {
+    from {
+        opacity: 0;
+        transform: translate(-50%, calc(-50% + 30px));
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
 }
 
 .login-box h2 {
@@ -189,9 +211,19 @@ textarea:focus {
 }
 
 @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-10px);
+    }
+
+    75% {
+        transform: translateX(10px);
+    }
 }
 
 /* Choice Cards */
@@ -238,4 +270,88 @@ textarea:focus {
     display: block;
     margin: 15px auto;
     width: 250px;
+}
+
+/* --- Dark Mode & UX Enhancements --- */
+html.dark-theme body {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    color: #f8fafc !important;
+}
+
+html.dark-theme .top-nav {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-bottom-color: #334155 !important;
+}
+
+html.dark-theme .card, html.dark-theme .stat-card {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+html.dark-theme .card h3, html.dark-theme .stat-value {
+    color: #f8fafc !important;
+}
+
+html.dark-theme table th {
+    background: #0f172a !important;
+    color: #94a3b8 !important;
+    border-bottom-color: #334155 !important;
+}
+
+html.dark-theme table td {
+    color: #cbd5e1 !important;
+    border-bottom-color: #334155 !important;
+}
+
+html.dark-theme .course-item {
+    background: #0f172a !important;
+    color: #f8fafc !important;
+}
+
+html.dark-theme .course-item:hover {
+    background: #1e293b !important;
+}
+
+html.dark-theme .user-details h3 {
+    color: #f8fafc !important;
+}
+
+html.dark-theme .course-name {
+    color: #f8fafc !important;
+}
+
+html.dark-theme .welcome-banner {
+    background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 100%) !important;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    cursor: pointer;
+    font-size: 24px;
+    transition: transform 0.25s ease;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.05);
+}
+
+html.dark-theme .theme-toggle {
+    background: rgba(255,255,255,0.1);
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
+/* SweetAlert2 Toast Overrides for Dark Mode */
+html.dark-theme .swal2-popup.swal2-toast {
+    background: #1e293b !important;
+    color: #f8fafc !important;
+}
+html.dark-theme .swal2-timer-progress-bar {
+    background: #3b82f6 !important;
 }
