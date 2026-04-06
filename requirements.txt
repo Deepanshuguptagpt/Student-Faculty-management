@@ -122,3 +122,8 @@ xxhash
 
 zstandard
 
+pypdf
+
+pdf2image
+
+python-docx

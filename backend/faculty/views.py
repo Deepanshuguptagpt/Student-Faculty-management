@@ -79,8 +79,10 @@ def faculty_dashboard(request):
                     due_datetime=selected_dt,
                     attachment=attachment,
                     submission_mode=submission_mode,
+                    enable_ai_evaluation=bool(request.POST.get('enable_ai_evaluation')),
+                    max_marks=int(request.POST.get('max_marks', 10)),
+                    rubric=request.POST.get('rubric', '')
                 )
-                
                 # Notify enrolled students
                 from django.core.mail import send_mail
                 from django.conf import settings

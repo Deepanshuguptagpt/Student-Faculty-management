@@ -59,6 +59,10 @@ class Assignment(models.Model):
     due_datetime = models.DateTimeField(null=True, blank=True, verbose_name="Due Date & Time")
     attachment = models.FileField(upload_to='assignments/materials/', null=True, blank=True, help_text="Upload instructions/notes in PDF or Word format")
     submission_mode = models.CharField(max_length=10, choices=SUBMISSION_MODE_CHOICES, default='online', verbose_name="Submission Mode")
+    # AI Evaluation Settings
+    enable_ai_evaluation = models.BooleanField(default=False, help_text="Enable automatic AI grading after deadline")
+    max_marks = models.IntegerField(default=10, help_text="Maximum marks for AI evaluation (e.g., 10, 20, 50, 100)")
+    rubric = models.TextField(null=True, blank=True, help_text="Optional answer key or marking scheme for AI to reference during evaluation")
 
     def __str__(self):
         return self.title
@@ -71,6 +75,7 @@ class AssignmentSubmission(models.Model):
     submitted_at = models.DateTimeField(auto_now_add=True)
     grade = models.CharField(max_length=10, null=True, blank=True)
     feedback = models.TextField(null=True, blank=True)
+    ai_confidence = models.CharField(max_length=10, null=True, blank=True, help_text="AI evaluation confidence: high, medium, or low")
 
     class Meta:
         unique_together = ('assignment', 'student')
@@ -139,3 +144,12 @@ class SubjectNote(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.course.code}"
+
+class AssignmentEvaluationLog(models.Model):
+    assignment = models.OneToOneField(Assignment, on_delete=models.CASCADE, related_name='evaluation_log')
+    evaluated_at = models.DateTimeField(auto_now_add=True)
+    total_evaluated = models.IntegerField(default=0)
+    report_sent = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Evaluation for {self.assignment.title} at {self.evaluated_at}"

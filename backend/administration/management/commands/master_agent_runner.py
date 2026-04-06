@@ -28,6 +28,10 @@ class Command(BaseCommand):
                     self.stdout.write(f"[{timezone.now()}] Running periodic fee audit...")
                     subprocess.run(['python', 'manage.py', 'fee_agent'])
 
+                # 4. Auto-Evaluate Assignments
+                self.stdout.write(f"[{timezone.now()}] Checking for past-due assignments to auto-evaluate...")
+                subprocess.run(['python', 'manage.py', 'assignment_evaluator_agent'])
+
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error in master runner cycle: {str(e)}"))
 

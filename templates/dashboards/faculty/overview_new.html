@@ -184,6 +184,43 @@
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Description / Instructions</label>
                         <textarea name="description" rows="3" placeholder="Enter assignment description..." style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;"></textarea>
                     </div>
+
+                    <!-- AI Grading Settings -->
+                    <div style="grid-column: span 2; background: linear-gradient(135deg, #EEF2FF, #E0E7FF); padding: 20px; border-radius: 12px; border: 1px solid #C7D2FE; margin-top: 5px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <span style="font-size: 20px;">🤖</span>
+                            <h5 style="margin: 0; color: #3730A3; font-size: 15px;">AI Auto-Grading Settings</h5>
+                            <span style="font-size: 11px; color: #6366F1; background: #E0E7FF; padding: 2px 8px; border-radius: 8px; font-weight: 600;">OPTIONAL</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; align-items: start;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; color: #3730A3; font-size: 14px;">
+                                    <input type="checkbox" name="enable_ai_evaluation" value="1" id="ai-eval-toggle"
+                                           style="accent-color: #4F46E5; width: 18px; height: 18px;">
+                                    Enable AI Evaluation
+                                </label>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #475569; font-size: 13px;">Max Marks</label>
+                                <select name="max_marks" id="ai-max-marks" style="padding: 8px 12px; border: 2px solid #C7D2FE; border-radius: 8px; font-size: 14px; background: white; min-width: 120px;">
+                                    <option value="10" selected>10</option>
+                                    <option value="20">20</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                            <div style="grid-column: span 2;">
+                                <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #475569; font-size: 13px;">Rubric / Answer Key (Optional)</label>
+                                <textarea name="rubric" rows="3" placeholder="Paste expected answers, marking scheme, or key points here. This helps the AI grade more accurately based on YOUR expectations..." 
+                                          style="width: 100%; padding: 10px; border: 2px solid #C7D2FE; border-radius: 8px; font-size: 13px; background: white;"></textarea>
+                                <small style="color: #6366F1; font-size: 11px;">💡 Tip: The more detailed your rubric, the more accurately the AI will match your grading expectations.</small>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.7); border-radius: 8px; font-size: 12px; color: #4338CA;">
+                            ℹ️ When enabled, the AI will automatically evaluate all submissions after the deadline passes and email you an Excel report with marks and feedback.
+                        </div>
+                    </div>
                 </div>
                 <button type="submit" class="btn-success" style="margin-top: 15px;">Post Assignment</button>
             </form>
