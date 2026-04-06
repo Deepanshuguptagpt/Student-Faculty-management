@@ -282,33 +282,36 @@
     <!-- Attendance Tab -->
     <div id="attendance-tab" class="tab-content {% if active_tab == 'attendance' %}active{% endif %}">
         <h3>Take Attendance</h3>
-        <form method="GET" action="/faculty/dashboard/attendance/" style="background: #F8FAFC; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                <div>
+        <form method="GET" action="/faculty/dashboard/attendance/" style="background: #F8FAFC; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Course:</label>
-                    <select name="course_id" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                    <select name="course_id" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px; height: 44px; box-sizing: border-box; margin: 0; font-family: inherit;">
                         <option value="">-- Select Course --</option>
                         {% for c in my_courses %}
                         <option value="{{ c.id }}">{{ c.code }} - {{ c.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div>
+                <div style="flex: 1; min-width: 200px; position: relative;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Date:</label>
-                    <input type="date" name="date" id="attendance-date" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
-                    <small style="color: #64748b; font-size: 12px; display: block; margin-top: 4px;">Only current and previous dates (excluding Sundays)</small>
+                    <input type="date" name="date" id="attendance-date" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px; height: 44px; box-sizing: border-box; margin: 0; font-family: inherit;">
+                    <small style="color: #64748b; font-size: 11px; position: absolute; top: calc(100% + 4px); left: 0; white-space: nowrap;">Only current and previous dates (excluding Sundays)</small>
                 </div>
-                <div>
+                <div style="flex: 1; min-width: 200px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #475569;">Lecture:</label>
-                    <select name="lecture_number" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px;">
+                    <select name="lecture_number" required style="width: 100%; padding: 10px; border: 2px solid #E2E8F0; border-radius: 8px; height: 44px; box-sizing: border-box; margin: 0; font-family: inherit;">
                         <option value="">-- Select --</option>
                         {% for i in "1234567"|make_list %}
                         <option value="{{ i }}">Lecture {{ i }}</option>
                         {% endfor %}
                     </select>
                 </div>
+                <div style="display: flex; flex-direction: column;">
+                    <label style="display: block; margin-bottom: 8px; visibility: hidden; font-weight: 600;">Button placeholder</label>
+                    <button type="submit" class="btn-primary" style="height: 44px; box-sizing: border-box; padding: 0 25px; margin: 0; display: flex; align-items: center; justify-content: center; font-family: inherit;">Load Students</button>
+                </div>
             </div>
-            <button type="submit" class="btn-primary" style="margin-top: 15px;">Load Students</button>
         </form>
         <p style="color: #475569; text-align: center;">Select course, date, and lecture number to mark attendance</p>
     </div>

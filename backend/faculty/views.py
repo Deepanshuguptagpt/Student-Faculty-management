@@ -698,13 +698,21 @@ def faculty_attendance_ai(request):
         enrollments = Enrollment.objects.filter(course_id=course_id).select_related('student__user')
         student_data = []
         for en in enrollments:
+            enrollment = en.student.enrollment_number
+            last_two = enrollment[-2:] if len(enrollment) >= 2 else enrollment
+            last_three = enrollment[-3:] if len(enrollment) >= 3 else enrollment
             student_data.append({
                 "id": str(en.student.id),
                 "name": en.student.user.name,
-                "enrollment_number": en.student.enrollment_number
+                "enrollment_number": enrollment,
+                "last_two": last_two,
+                "last_three": last_three
             })
             
-        student_list_str = "\n".join([f"ID: {s['id']}, Name: {s['name']}, Enrollment: {s['enrollment_number']}" for s in student_data])
+        student_list_str = "\n".join([
+            f"ID: {s['id']}, Name: {s['name']}, Enrollment: {s['enrollment_number']} (Ends with: {s['last_two']} or {s['last_three']})" 
+            for s in student_data
+        ])
 
         prompt = f"""You are an AI assistant helping a faculty member mark attendance.
 The faculty provided the following natural language instruction: "{instruction}"
@@ -718,7 +726,7 @@ Strict Rules for determining status:
 2. If the instruction says "mark X absent" and doesn't mention the rest, ONLY return student X with status 'Absent'. Do NOT return statuses for anyone else.
 3. If the instruction says "mark Y present" and doesn't mention the rest, ONLY return student Y with status 'Present'.
 4. If the instruction says "mark X absent, rest all present", then return student X as 'Absent' AND explicitly return all other students as 'Present'.
-5. If the instruction contains numbers (e.g., "mark 23 and 45 absent"), match those numbers exactly to the LAST few digits of the students' Enrollment numbers.
+5. CRITICAL: If the instruction contains numbers (e.g., "mark 23 and 45 absent"), DO NOT treat them as sequence or list numbers. You MUST match those numbers precisely to the "Ends with:" values provided next to each student's Enrollment number.
 6. Do your best to fuzzy-match misspelled names from the instruction to the list of enrolled students.
 
 Respond ONLY with a valid JSON format exactly like:
